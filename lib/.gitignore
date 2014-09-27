@@ -41,7 +41,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Vim
-*.swp
-*.swo
-tags
+# Downloaded Files
+
+/video/*
+/article/*
+
+*.html
