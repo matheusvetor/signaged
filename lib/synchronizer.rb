@@ -25,6 +25,7 @@ class Loadable
   end
 
   def response
+    puts $PROGRAM_NAME + ": Downloading file " + url.to_s
     Net::HTTP.get_response @url
   end
 
@@ -52,7 +53,6 @@ class Article < Loadable
   attr_reader :type, :url
 
   def initialize(url)
-    puts url
     @url = URI.parse(url)
     @type = "article"
   end
@@ -64,18 +64,30 @@ class Article < Loadable
 
   def rendered_page_response
     url = 'http://localhost:3000/?file_path=' + relative_file_path
-    puts url
+    puts $PROGRAM_NAME + ": Downloading file " + url
     Net::HTTP.get_response URI.parse(url)
   end
 
   def download_rendered_page
     rendered_image_path = file_path + '.png'
-    puts rendered_image_path
     unless File.exist?(rendered_image_path)
       File.open(rendered_image_path, "wb") do |file|
         file.write(rendered_page_response.body)
       end
     end
+  end
+end
+
+class Schedule
+  def self.parse_itineraries(serialized_itineraries)
+    parsed_itineraries = JSON.parse(serialized_itineraries)
+    itineraries = []
+    parsed_itineraries.each do |itinerary|
+      url = itinerary['url']
+      item = itinerary['type'] == 'video' ? Video.new(url) : Article.new(url)
+      itineraries << item
+    end
+    itineraries
   end
 end
 
@@ -118,5 +130,6 @@ class Synchronizer
       item.download
       @itineraries << item
     end
+    return json
   end
 end

@@ -52,6 +52,6 @@ phantom.create(function(ph) {
   }
 
   http.createServer(app).listen(3000);
-  console.log('Working path: ' + working_path);
-  console.log('Server listening on port 3000...');
+  console.log(process.argv[1] + ': Working path: ' + working_path);
+  console.log(process.argv[1] + ': Server listening on port 3000...');
 });
