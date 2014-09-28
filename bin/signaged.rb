@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 require_relative '../lib/synchronizer.rb'
 
 usage = "Usage: signage.rb SERVER_URL [SERIAL]"

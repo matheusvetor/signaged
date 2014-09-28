@@ -11,6 +11,8 @@
 ### END INIT INFO
 
 signaged_home="/opt/signaged"
+signaged_server="http://tv-indoor.192.168.25.11.xip.io"
+machine_serial="CD9AK29HYCGPAH09"
 pid_file="/var/run/signage.pid"
 
 function running() {
@@ -36,7 +38,7 @@ function start() {
         echo "signaged is already running"
     else
         echo "Starting signaged ..."
-        /usr/bin/env ruby "$signaged_home/bin/signaged.rb" & echo $! > "$pid_file"
+        $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
     fi
 }
 
