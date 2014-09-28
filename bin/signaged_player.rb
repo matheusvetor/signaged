@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'shellwords'
 require_relative '../lib/synchronizer.rb'
 
 serialized_itineraries = ARGV[0]
@@ -38,6 +39,24 @@ command_seq.each do |it|
   puts $PROGRAM_NAME + ": " + it.items.length.to_s + " item(s) of type " + it.type
 end
 
+video_player_pid = -1
+image_player_pid = -1
 command_seq.each do |it|
   puts $PROGRAM_NAME + ": show " + it.to_s
+  case it.type
+  when "video"
+    if video_player_pid >= 0
+      kill video_player_pid
+    end
+    params = it.items.map{|i| Shellwords.escape(i.file_path) }.join(" ")
+    command = "omxplayer -o hdmi " + params
+    video_player_pid = spawn(command)
+  when "article"
+    if image_player_pid >= 0
+      kill image_player_pid
+    end
+    params = it.items.map{|i| Shellwords.escape(i.rendered_file_path) }.join(" ")
+    command = "fbi -a -blend 600 -noverbose " + params
+    image_player_pid = spawn(command)
+  end
 end
