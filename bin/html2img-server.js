@@ -1,10 +1,12 @@
 var phantom = require('phantom');
-var temp = require('temp');
 var http = require('http');
+var crypto = require('crypto');
 var fs = require('fs');
 var url = require('url');
 
-temp.track();
+function create_temp_file_path() {
+  return 'html2img.' + crypto.randomBytes(4).readUInt32LE(0) + '.png';
+}
 
 var working_path = process.argv[2];
 if (!working_path) {
@@ -14,7 +16,7 @@ if (!working_path) {
 
 phantom.create(function(ph) {
   function render_html(file_path, opts, cb) {
-    var tmp_filename = temp.path({suffix: '.png'});
+    var tmp_filename = create_temp_file_path();
 
     ph.createPage(function(page) {
       page.open('file://' + file_path, function() {
@@ -25,7 +27,10 @@ phantom.create(function(ph) {
             width: 1920,
             height: 1080
           };
-          page.render(tmp_filename, opts, function() { cb(tmp_filename); });
+          page.render(tmp_filename, opts, function() {
+            cb(tmp_filename);
+            fs.unlink(tmp_filename);
+          });
         });
       });
     });
