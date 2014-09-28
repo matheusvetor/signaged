@@ -3,6 +3,7 @@
 require 'rubygems'
 require 'net/http'
 require 'json'
+require 'tempfile'
 
 $content_dir = '/Users/felipe/code/signaged/downloads'
 
@@ -31,9 +32,9 @@ class Loadable
 
   def download
     unless File.exist?(file_path)
-      File.open(file_path, "wb") do |file|
-        file.write(response.body)
-      end
+      tmp_file = Tempfile.new(filename)
+      tmp_file.write(response.body)
+      FileUtils.move(tmp_file.path, file_path)
     end
   end
 end
@@ -71,9 +72,9 @@ class Article < Loadable
   def download_rendered_page
     rendered_image_path = file_path + '.png'
     unless File.exist?(rendered_image_path)
-      File.open(rendered_image_path, "wb") do |file|
-        file.write(rendered_page_response.body)
-      end
+      tmp_file = Tempfile.new(filename)
+      tmp_file.write(rendered_page_response.body)
+      FileUtils.move(tmp_file.path, rendered_image_path)
     end
   end
 end
