@@ -12,18 +12,6 @@ class Loadable
     @url = url
   end
 
-  def download
-    unless File.exist?(file_path)
-      File.open(file_path, "wb") do |file|
-        file.write(response.body)
-      end
-    end
-  end
-
-  def response
-    Net::HTTP.get_response url
-  end
-
   def filename
     uri = URI.parse(url)
     File.basename(uri.path)
@@ -31,6 +19,18 @@ class Loadable
 
   def file_path
     "#{content_dir}/#{@type}/#{@filename}"
+  end
+
+  def response
+    Net::HTTP.get_response url
+  end
+
+  def download
+    unless File.exist?(file_path)
+      File.open(file_path, "wb") do |file|
+        file.write(response.body)
+      end
+    end
   end
 end
 
