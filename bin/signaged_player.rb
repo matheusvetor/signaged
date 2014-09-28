@@ -46,22 +46,36 @@ end
 
 video_player_pid = -1
 image_player_pid = -1
-command_seq.each do |it|
-  puts $PROGRAM_NAME + ": show " + it.to_s
-  case it.type
-  when "video"
-    if video_player_pid >= 0
-      kill video_player_pid
+
+term_signal_handler = proc {
+  Process.kill("KILL", video_player_pid) unless video_player_pid < 0
+  Process.kill("KILL", image_player_pid) unless image_player_pid < 0
+}
+
+Signal.trap("INT", term_signal_handler)
+Signal.trap("TERM", term_signal_handler)
+
+while true
+  command_seq.each do |it|
+    case it.type
+    when "video"
+      params = it.items.map{|i| Shellwords.escape(i.file_path) }
+      params.each do |p|
+        command = "omxplayer -o hdmi " + p
+        puts command
+        video_player_pid = spawn(command)
+        status = Process.waitpid(video_player_pid)
+      end
+    when "article"
+      timeout = 3
+      params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }.join(" ")
+      command = "fbi -T 1 -a -cachemem 4 -t #{timeout} -blend 600 -noverbose #{params}"
+      puts command
+      image_player_pid = spawn(command)
+      Process.detach(image_player_pid)
+      #status = Process.waitpid(image_player_pid)
+      sleep(it.items.length * timeout)
+      Process.kill("KILL", image_player_pid)
     end
-    params = it.items.map{|i| Shellwords.escape(i.file_path) }.join(" ")
-    command = "omxplayer -o hdmi " + params
-    video_player_pid = spawn(command)
-  when "article"
-    if image_player_pid >= 0
-      kill image_player_pid
-    end
-    params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }.join(" ")
-    command = "fbi -a -blend 600 -noverbose " + params
-    image_player_pid = spawn(command)
   end
 end
