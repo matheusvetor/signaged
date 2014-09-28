@@ -38,7 +38,7 @@ puts $PROGRAM_NAME + ": Using content dir " + $content_dir
 workind_dir = base_dir + '/../downloads'
 html2img_pid = spawn('node ' + base_dir + '/html2img-server.js ' + workind_dir)
 puts $PROGRAM_NAME + ": Spawning node html2img-server.js... " + html2img_pid.to_s
-sleep 4 # Wait for the server to fully start
+sleep 6 # Wait for the server to fully start
 
 # A loop that downloads and show the files
 last_schedule_id = -1
