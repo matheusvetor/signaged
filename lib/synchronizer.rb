@@ -120,7 +120,14 @@ class Synchronizer
   #   ]
   # }
   def json_response
-    JSON.parse response.body
+    begin
+      JSON.parse response.body
+    rescue
+      file = File.open("#{$content_dir}/#{@serial}.json")
+      parsed_json = JSON.parse file.read
+      file.close
+      parsed_json
+    end
   end
 
   def sync
