@@ -11,6 +11,11 @@ end
 
 puts $PROGRAM_NAME + ": Started signaged player."
 
+# Get the expanded base directory
+base_dir = File.expand_path(File.dirname(__FILE__))
+
+$content_dir = "#{base_dir}/../downloads"
+
 itineraries = Schedule.parse_itineraries(serialized_itineraries)
 
 ScheduleRun = Struct.new(:type, :items)
@@ -55,7 +60,7 @@ command_seq.each do |it|
     if image_player_pid >= 0
       kill image_player_pid
     end
-    params = it.items.map{|i| Shellwords.escape(i.rendered_file_path) }.join(" ")
+    params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }.join(" ")
     command = "fbi -a -blend 600 -noverbose " + params
     image_player_pid = spawn(command)
   end
