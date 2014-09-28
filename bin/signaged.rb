@@ -31,6 +31,9 @@ SERIAL = begin
 # Get the expanded base directory
 base_dir = File.expand_path(File.dirname(__FILE__))
 
+$content_dir = "#{base_dir}/../downloads"
+puts $PROGRAM_NAME + ": Using content dir " + $content_dir
+
 # Spawn the html2img server
 workind_dir = base_dir + '/../downloads'
 html2img_pid = spawn('node ' + base_dir + '/html2img-server.js ' + workind_dir)

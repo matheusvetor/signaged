@@ -5,8 +5,6 @@ require 'net/http'
 require 'json'
 require 'tempfile'
 
-$content_dir = '/Users/felipe/code/signaged/downloads'
-
 # Downloadable object
 class Loadable
   def initialize(url)
@@ -26,7 +24,7 @@ class Loadable
   end
 
   def response
-    puts $PROGRAM_NAME + ": Downloading file " + url.to_s
+    puts "#{$PROGRAM_NAME}: Downloading file #{url.to_s} into #{file_path}"
     Net::HTTP.get_response @url
   end
 

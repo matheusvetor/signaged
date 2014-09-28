@@ -10,7 +10,7 @@
 # Description: Start signaged at boot time
 ### END INIT INFO
 
-signaged_home="/opt/signaged"
+signaged_home="/home/pi/signaged"
 signaged_server="http://tv-indoor.192.168.25.11.xip.io"
 machine_serial="CD9AK29HYCGPAH09"
 pid_file="/var/run/signage.pid"
