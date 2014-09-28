@@ -11,25 +11,27 @@
 ### END INIT INFO
 
 signaged_home="/home/pi/signaged"
-signaged_server="http://tv-indoor.192.168.25.11.xip.io"
+signaged_server="http://192.168.25.11:3000"
 machine_serial="CD9AK29HYCGPAH09"
 pid_file="/var/run/signage.pid"
 
 function running() {
     if [ -f "$pid_file" ]
     then
-        pid=$(cat "$pid_file")
-        output=$(ps aux | grep -v grep | grep "$pid")
-
-        if [ "$output" != "" ]
-        then
-            return 0
-        else
-            return 1
-        fi
+        return 0
     else
         return 1
     fi
+}
+
+function start_html2img() {
+    echo "Starting html2img server..."
+    /usr/local/bin/node "$signaged_home/bin/html2img-server.js" "$signaged_home/downloads" &
+}
+
+function start_html2img() {
+    echo "Starting html2img server..."
+    killall node
 }
 
 function start() {
@@ -46,20 +48,13 @@ function stop() {
     if running
     then
         echo "Stopping signaged ..."
-
         pid=$(cat "$pid_file")
-
         kill "$pid"
-
-        if running
-        then
-            kill -9 "$pid"
-        fi
-
         rm "$pid_file"
     else
         echo "signaged is not running"
     fi
+    killall -8 ruby fbi omxplayer
 }
 
 case "$1" in

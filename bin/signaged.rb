@@ -34,12 +34,6 @@ base_dir = File.expand_path(File.dirname(__FILE__))
 $content_dir = "#{base_dir}/../downloads"
 puts $PROGRAM_NAME + ": Using content dir " + $content_dir
 
-# Spawn the html2img server
-workind_dir = base_dir + '/../downloads'
-html2img_pid = spawn('node ' + base_dir + '/html2img-server.js ' + workind_dir)
-puts $PROGRAM_NAME + ": Spawning node html2img-server.js... " + html2img_pid.to_s
-sleep 6 # Wait for the server to fully start
-
 # A loop that downloads and show the files
 last_schedule_id = -1
 player_pid = -1
