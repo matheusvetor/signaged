@@ -121,9 +121,13 @@ class Synchronizer
     begin
       JSON.parse response.body
     rescue
-      file = File.open("#{$content_dir}/#{@serial}.json")
-      parsed_json = JSON.parse file.read
-      file.close
+      begin
+        file = File.open("#{$content_dir}/#{@serial}.json")
+        parsed_json = JSON.parse file.read
+        file.close
+      rescue
+        raise "Can't download JSON itinerary no find the local file"
+      end
       parsed_json
     end
   end
