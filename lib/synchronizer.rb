@@ -4,25 +4,28 @@ require 'rubygems'
 require 'net/http'
 require 'json'
 
-content_dir = '/Users/felipe/code/signage/downloads'
+$content_dir = '/Users/felipe/code/signaged/downloads'
 
 # Downloadable object
 class Loadable
   def initialize(url)
-    @url = url
+    @url = URI.parse(url)
   end
 
   def filename
-    uri = URI.parse(url)
-    File.basename(uri.path)
+    File.basename(@url.path)
+  end
+
+  def relative_file_path
+    "/#{@type}/#{filename}"
   end
 
   def file_path
-    "#{content_dir}/#{@type}/#{@filename}"
+    "#{$content_dir}#{relative_file_path}"
   end
 
   def response
-    Net::HTTP.get_response url
+    Net::HTTP.get_response @url
   end
 
   def download
@@ -36,12 +39,44 @@ end
 
 # Videos can be downloaded
 class Video < Loadable
-  @type = "video"
+  attr_reader :type, :url
+  
+  def initialize(url)
+    @url = URI.parse(url)
+    @type = "video"
+  end
 end
 
 # HTML articles can be downloaded
 class Article < Loadable
-  @type = "article"
+  attr_reader :type, :url
+
+  def initialize(url)
+    puts url
+    @url = URI.parse(url)
+    @type = "article"
+  end
+
+  def download
+    super
+    download_rendered_page
+  end
+
+  def rendered_page_response
+    url = 'http://localhost:3000/?file_path=' + relative_file_path
+    puts url
+    Net::HTTP.get_response URI.parse(url)
+  end
+
+  def download_rendered_page
+    rendered_image_path = file_path + '.png'
+    puts rendered_image_path
+    unless File.exist?(rendered_image_path)
+      File.open(rendered_image_path, "wb") do |file|
+        file.write(rendered_page_response.body)
+      end
+    end
+  end
 end
 
 class Synchronizer
@@ -50,6 +85,7 @@ class Synchronizer
   def initialize(server, serial)
     @server = server
     @serial = serial
+    @itineraries = []
   end
 
   def itineraries_uri
@@ -75,10 +111,10 @@ class Synchronizer
   end
 
   def sync
-    puts itineraries_uri
     json = json_response
     json['itineraries'].each do |itinerary|
-      item = itinerary['type'] == 'video' ? Video.new(itinerary.url) : Article.new(itinerary.url)
+      url = itinerary['url']
+      item = itinerary['type'] == 'video' ? Video.new(url) : Article.new(url)
       item.download
       @itineraries << item
     end

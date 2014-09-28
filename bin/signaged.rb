@@ -25,5 +25,20 @@ SERIAL = begin
            end
          end
 
+# Get the expanded base directory
+base_dir = File.expand_path(File.dirname(__FILE__))
+
+# Spawn the html2img server
+workind_dir = base_dir + '/../downloads'
+html2img_pid = spawn('node ' + base_dir + '/html2img-server.js ' + workind_dir)
+print "Spawning node html2img-server.js... "
+sleep 4 # Wait for the server to fully start
+puts html2img_pid
+
+# Download files
 synchronizer = Synchronizer.new(SERVER, SERIAL)
 synchronizer.sync
+
+while true
+  sleep 2
+end
