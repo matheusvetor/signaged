@@ -69,8 +69,11 @@ class Article < Loadable
     Net::HTTP.get_response URI.parse(url)
   end
 
+  def rendered_image_path
+    file_path + '.png'
+  end
+
   def download_rendered_page
-    rendered_image_path = file_path + '.png'
     unless File.exist?(rendered_image_path)
       tmp_file = Tempfile.new(filename)
       tmp_file.write(rendered_page_response.body)
