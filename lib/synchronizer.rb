@@ -30,10 +30,11 @@ class Loadable
 
   def download
     unless File.exist?(file_path)
-      tmp_file = Tempfile.new(filename)
+      tmp_file_path = 'download.' + rand(1000000)
+      tmp_file = File.open(tmp_file_path)
       tmp_file.write(response.body)
       tmp_file.close
-      FileUtils.move(tmp_file.path, file_path)
+      FileUtils.move(tmp_file_path, file_path)
     end
   end
 end
