@@ -32,6 +32,7 @@ class Loadable
     unless File.exist?(file_path)
       tmp_file = Tempfile.new(filename)
       tmp_file.write(response.body)
+      tmp_file.close
       FileUtils.move(tmp_file.path, file_path)
     end
   end
