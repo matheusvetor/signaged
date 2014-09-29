@@ -43,8 +43,9 @@ while true
 
   if current_schedule['id'] != last_schedule_id
     if player_pid >= 0
-      # stop the player if it's running
+      # ask the player to stop if it's running
       Process.kill("TERM", player_pid)
+      Process.waitpid(player_pid)
     end
 
     # spawn the player
@@ -54,5 +55,5 @@ while true
 
   last_schedule_id = current_schedule['id']
 
-  sleep 10
+  sleep 1000
 end

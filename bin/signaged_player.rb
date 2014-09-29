@@ -46,36 +46,39 @@ end
 
 video_player_pid = -1
 image_player_pid = -1
+should_end = false
 
 term_signal_handler = proc {
-  Process.kill("KILL", video_player_pid) unless video_player_pid < 0
-  Process.kill("KILL", image_player_pid) unless image_player_pid < 0
+  should_end = true
 }
 
 Signal.trap("INT", term_signal_handler)
 Signal.trap("TERM", term_signal_handler)
 
-while true
+while !should_end
   command_seq.each do |it|
     case it.type
     when "video"
       params = it.items.map{|i| Shellwords.escape(i.file_path) }
       params.each do |p|
         command = "omxplayer -o hdmi " + p
-        puts command
+        puts "#{$PROGRAM_NAME}: spawn: #{command}"
         video_player_pid = spawn(command)
-        status = Process.waitpid(video_player_pid)
+        status = Process.waitpid2(video_player_pid)
+        puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
       end
     when "article"
-      timeout = 3
-      params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }.join(" ")
-      command = "fbi -T 1 -a -cachemem 4 -t #{timeout} -blend 600 -noverbose #{params}"
-      puts command
-      image_player_pid = spawn(command)
-      Process.detach(image_player_pid)
-      #status = Process.waitpid(image_player_pid)
-      sleep(it.items.length * timeout)
-      Process.kill("KILL", image_player_pid)
+      timeout = 12
+      params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }
+      params.each do |p|
+        command = "fbi -T 1 -a -noverbose #{p}"
+        puts "#{$PROGRAM_NAME}: spawn: #{command}"
+        image_player_pid = spawn(command)
+        puts "pid: #{image_player_pid}"
+        status = Process.waitpid2(image_player_pid)
+        sleep timeout
+        puts "#{$PROGRAM_NAME}: fbi finished: #{status[1]}"
+      end
     end
   end
 end
