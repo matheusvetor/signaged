@@ -61,6 +61,7 @@ class Article < Loadable
   def download
     super
     download_rendered_page
+    make_video
   end
 
   def rendered_page_response
@@ -70,7 +71,21 @@ class Article < Loadable
   end
 
   def rendered_image_path
-    file_path + '.png'
+    "#{file_path}.png"
+  end
+
+  def video_path
+    "#{file_path}.avi"
+  end
+
+  def make_video
+    unless File.exist?(video_path)
+      tmp_file = Tempfile.new(filename)
+      pid = spawn("avconv -loop 1 -i #{rendered_image_path} -t 5 -y #{tmp_file.path}.avi")
+      status = Process.waitpid2(pid)
+      FileUtils.move("#{tmp_file.path}.avi", video_path)
+
+    end
   end
 
   def download_rendered_page
