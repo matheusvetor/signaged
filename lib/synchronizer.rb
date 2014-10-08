@@ -41,21 +41,23 @@ end
 
 # Videos can be downloaded
 class Video < Loadable
-  attr_reader :type, :url
-  
-  def initialize(url)
+  attr_reader :type, :url, :disable_audio
+
+  def initialize(url, disable_audio)
     @url = URI.parse(url)
     @type = "video"
+    @disable_audio = !!disable_audio
   end
 end
 
 # HTML articles can be downloaded
 class Article < Loadable
-  attr_reader :type, :url
+  attr_reader :type, :url, :video_duration
 
-  def initialize(url)
+  def initialize(url, video_duration)
     @url = URI.parse(url)
     @type = "article"
+    @video_duration = video_duration
   end
 
   def download
@@ -129,6 +131,9 @@ class Synchronizer
 
   # {
   #   id: "f212512",
+  #   article_duration: 2
+  #   check_after:  43000
+  #   disable_audio: true
   #   itineraries: [
   #     {
   #       type: "video" | "article" | ...,
@@ -154,9 +159,11 @@ class Synchronizer
 
   def sync
     json = json_response
+    article_duration = json['article_duration']
+    disable_audio = json['disable_audio']
     json['itineraries'].each do |itinerary|
       url = itinerary['url']
-      item = itinerary['type'] == 'video' ? Video.new(url) : Article.new(url)
+      item = itinerary['type'] == 'video' ? Video.new(url, disable_audio) : Article.new(url, article_duration)
       item.download
       @itineraries << item
     end
