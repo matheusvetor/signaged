@@ -20,7 +20,7 @@ SERVER = begin
          end
 
 # This machine's identification
-SERIAL = begin 
+SERIAL = begin
            if ARGV[1]
              ARGV[1]
            else
@@ -55,5 +55,5 @@ while true
 
   last_schedule_id = current_schedule['id']
 
-  sleep 1000
+  sleep [current_schedule['check_after'] || 7200 , 43200].min
 end
