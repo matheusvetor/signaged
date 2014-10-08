@@ -61,9 +61,11 @@ while !should_end
   command_seq.each do |it|
     case it.type
     when "video"
-      params = it.items.map{|i| Shellwords.escape(i.file_path) }
-      params.each do |p|
-        command = "omxplayer -o hdmi #{p} > /dev/null"
+      #params = it.items.map{|i| Shellwords.escape(i.file_path) }
+      #params.each do |p|
+      it.items.each do |p|
+        file_path = Shellwords.escape(p.file_path)
+        command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null"
         # puts "#{$PROGRAM_NAME}: spawn: #{command}"
         video_player_pid = spawn(command)
         status = Process.waitpid2(video_player_pid)
