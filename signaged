@@ -29,7 +29,7 @@ function start_html2img() {
     /usr/local/bin/node "$signaged_home/bin/html2img-server.js" "$signaged_home/downloads" &
 }
 
-function start_html2img() {
+function stop_html2img() {
     echo "Starting html2img server..."
     killall node
 }
@@ -39,6 +39,7 @@ function start() {
     then
         echo "signaged is already running"
     else
+        start_html2img()
         echo "Starting signaged ..."
         $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
     fi
