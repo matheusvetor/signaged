@@ -5,7 +5,7 @@ install-on-macosx:
 	sudo npm install temp phantom
 
 install-on-pi:
-	sudo apt-get install ruby
+	sudo apt-get install ruby ffmpeg
 	# sudo apt-get install ruby npm
 
 	# Extract nodejs for RaspberryPi
