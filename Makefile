@@ -8,6 +8,7 @@ install-on-pi:
 	sudo apt-get install ruby nodejs npm
 	# Download and extract phantomjs for RaspberryPi
 	wget https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip
+	rm -rf master.zip
 	unzip master.zip
 	tar xjf phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l.tar.bz2
 	# Install phantomjs
