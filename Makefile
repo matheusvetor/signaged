@@ -41,6 +41,11 @@ install-on-pi:
 	# Install node modules
 	sudo npm install temp phantom
 
+	# Copy signaged to init.d
+	sudo cp signaged /etc/init.d
+	# Add signaged to boot start
+	update-rc.d signaged start
+
 install: install-on-pi
 	mkdir -p downloads
 	mkdir -p downloads/article
