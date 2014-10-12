@@ -33,7 +33,7 @@ function start_html2img() {
 }
 
 function stop_html2img() {
-    echo "Starting html2img server..."
+    echo "Stopping html2img server..."
     killall node
 }
 
