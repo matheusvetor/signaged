@@ -29,7 +29,7 @@ function running() {
 
 function start_html2img() {
     echo "Starting html2img server..."
-    /usr/local/bin/node "$signaged_home/bin/html2img-server.js" "$signaged_home/downloads" &
+    /usr/bin/node "$signaged_home/bin/html2img-server.js" "$signaged_home/downloads" &
 }
 
 function stop_html2img() {
