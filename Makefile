@@ -5,8 +5,8 @@ install-on-macosx:
 	sudo npm install temp phantom
 
 install-on-pi:
-	# sudo apt-get install ruby nodejs npm
-	sudo apt-get install ruby npm
+	sudo apt-get install ruby nodejs npm
+	# sudo apt-get install ruby npm
 
 	# Install Node for RaspberryPi
 	sudo cp support/node-v0.10.28-linux-arm-pi/bin/node /usr/bin/node
