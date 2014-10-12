@@ -5,19 +5,35 @@ install-on-macosx:
 	sudo npm install temp phantom
 
 install-on-pi:
-	sudo apt-get install ruby nodejs npm
+	sudo apt-get install ruby
 	# sudo apt-get install ruby npm
 
-	# Install Node for RaspberryPi
-	sudo cp support/node /usr/bin/node
-	# Download and extract phantomjs for RaspberryPi
+	# Extract nodejs for RaspberryPi
+	tar -zxf support/node-v0.10.28-linux-arm-pi.tar.gz
+	# Remove any old node version. Create the dir again
+	sudo rm -r -f /opt/node
+	sudo mkdir /opt/node
+
+	# Copy the expanded files
+	sudo cp node-v*arm-pi*/* /opt/node
+
+	# Symlink node and npm to somewhere already in the path. Debate where...
+	sudo ln -s -f /opt/node/bin/node /usr/bin/node
+	sudo ln -s -f /opt/node/bin/npm /usr/bin/npm
+
+	# Extract phantomjs for RaspberryPi
 	# wget https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip
-	# unzip master.zip
-	# tar xjf phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l.tar.bz2
-	# Install phantomjs
-	sudo cp support/phantomjs /usr/local/bin
+	unzip support/phantomjs-pi-1.9.0.zip
+	tar xjf phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l.tar.bz2
+	# Remove any old node version. Create the dir again
+	sudo rm -r -f /opt/phantomjs
+	sudo mkdir /opt/phantomjs
+	# Copy the expanded files
+	sudo cp phantomjs-1.9.0-linux-armv6l /opt/phantomjs
+
 	# Fix node executable name
 	# sudo ln -s /usr/bin/nodejs /usr/bin/node
+
 	# Get a newer npm
 	sudo npm update
 	# Install node modules
