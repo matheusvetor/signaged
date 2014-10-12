@@ -142,7 +142,11 @@ class Synchronizer
   # }
   def json_response
     begin
-      JSON.parse response.body
+      parsed_json = JSON.parse response.body
+
+      File.open("#{$content_dir}/#{@serial}.json", "wb") do |file|
+        file.write(parsed_json)
+      end
     rescue
       begin
         file = File.open("#{$content_dir}/#{@serial}.json")
