@@ -65,7 +65,7 @@ while !should_end
       #params.each do |p|
       it.items.each do |p|
         file_path = Shellwords.escape(p.file_path)
-        command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null"
+        command = "omxplayer -o hdmi #{file_path} > /dev/null"
         # puts "#{$PROGRAM_NAME}: spawn: #{command}"
         video_player_pid = spawn(command)
         status = Process.waitpid2(video_player_pid)
@@ -76,7 +76,7 @@ while !should_end
       params = it.items.map{|i| Shellwords.escape(i.video_path) }
       params.each do |p|
         #command = "fbi -T 1 -a -noverbose #{p}"
-        command = "omxplayer -o hdmi --no-keys #{p} > /dev/null"
+        command = "omxplayer -o hdmi #{p} > /dev/null"
         #puts "#{$PROGRAM_NAME}: spawn: #{command}"
         image_player_pid = spawn(command)
         #puts "pid: #{image_player_pid}"
