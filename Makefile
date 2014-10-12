@@ -15,9 +15,8 @@ install-on-pi:
 	# Fix node executable name
 	sudo ln -s /usr/bin/nodejs /usr/bin/node
 	# Get a newer npm
-	sudo ln -s /usr/bin/nodejs /usr/bin/node
-	# Install node modules
 	sudo npm update
+	# Install node modules
 	sudo npm install temp phantom
 
 install: install-on-pi
