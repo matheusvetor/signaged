@@ -9,13 +9,13 @@ install-on-pi:
 	# sudo apt-get install ruby npm
 
 	# Install Node for RaspberryPi
-	sudo cp support/node-v0.10.28-linux-arm-pi/bin/node /usr/bin/node
+	sudo cp support/node /usr/bin/node
 	# Download and extract phantomjs for RaspberryPi
 	# wget https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip
 	# unzip master.zip
 	# tar xjf phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l.tar.bz2
 	# Install phantomjs
-	sudo cp support/phantomjs-1.9.0-linux-armv6l/bin/phantomjs /usr/local/bin
+	sudo cp support/phantomjs /usr/local/bin
 	# Fix node executable name
 	# sudo ln -s /usr/bin/nodejs /usr/bin/node
 	# Get a newer npm
