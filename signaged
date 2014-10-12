@@ -43,6 +43,7 @@ function start() {
         echo "signaged is already running"
     else
         start_html2img
+        sleep 10
         echo "Starting signaged ..."
         $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
     fi
