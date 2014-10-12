@@ -42,7 +42,7 @@ function start() {
     then
         echo "signaged is already running"
     else
-        start_html2img()
+        start_html2img
         echo "Starting signaged ..."
         $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
     fi
@@ -58,7 +58,7 @@ function stop() {
     else
         echo "signaged is not running"
     fi
-    killall -8 ruby fbi omxplayer
+    killall -8 ruby node omxplayer
 }
 
 case "$1" in
