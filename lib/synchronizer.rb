@@ -147,6 +147,8 @@ class Synchronizer
       File.open("#{$content_dir}/#{@serial}.json", "wb") do |file|
         file.write(parsed_json)
       end
+
+      parsed_json
     rescue
       begin
         file = File.open("#{$content_dir}/#{@serial}.json")
