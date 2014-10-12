@@ -43,7 +43,7 @@ end
 class Video < Loadable
   attr_reader :type, :url, :disable_audio
 
-  def initialize(url, disable_audio)
+  def initialize(url, disable_audio = nil)
     @url = URI.parse(url)
     @type = "video"
     @disable_audio = !!disable_audio
@@ -54,7 +54,7 @@ end
 class Article < Loadable
   attr_reader :type, :url, :video_duration
 
-  def initialize(url, video_duration)
+  def initialize(url, video_duration = 5)
     @url = URI.parse(url)
     @type = "article"
     @video_duration = video_duration
@@ -101,11 +101,9 @@ class Schedule
   def self.parse_itineraries(serialized_itineraries)
     parsed_itineraries = JSON.parse(serialized_itineraries)
     itineraries = []
-    article_duration = parsed_itineraries['article_duration']
-    disable_audio = parsed_itineraries['disable_audio']
     parsed_itineraries.each do |itinerary|
       url = itinerary['url']
-      item = itinerary['type'] == 'video' ? Video.new(url, disable_audio) : Article.new(url, article_duration)
+      item = itinerary['type'] == 'video' ? Video.new(url) : Article.new(url)
       itineraries << item
     end
     itineraries
