@@ -84,9 +84,7 @@ class Article < Loadable
     unless File.exist?(video_path)
       tmp_file = Tempfile.new(filename)
       pid = spawn("avconv -loop 1 -i #{rendered_image_path} -t #{video_duration} -y #{tmp_file.path}.avi")
-      status = Process.waitpid2(pid)
       FileUtils.move("#{tmp_file.path}.avi", video_path)
-
     end
   end
 
