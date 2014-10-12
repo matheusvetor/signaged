@@ -29,7 +29,7 @@ install-on-pi:
 	sudo rm -r -f /opt/phantomjs
 	sudo mkdir /opt/phantomjs
 	# Copy the expanded files
-	sudo cp -r phantomjs-1.9.0-linux-armv6l /opt/phantomjs
+	sudo cp -r phantomjs-1.9.0-linux-armv6l/* /opt/phantomjs
 
 	sudo ln -s -f /opt/phantomjs/bin/phantomjs /usr/bin/phantomjs
 
