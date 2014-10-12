@@ -31,6 +31,8 @@ install-on-pi:
 	# Copy the expanded files
 	sudo cp -r phantomjs-1.9.0-linux-armv6l /opt/phantomjs
 
+	sudo ln -s -f /opt/phantomjs/bin/phantomjs /usr/bin/phantomjs:
+
 	# Fix node executable name
 	# sudo ln -s /usr/bin/nodejs /usr/bin/node
 
