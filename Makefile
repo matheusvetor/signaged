@@ -15,7 +15,7 @@ install-on-pi:
 	sudo mkdir /opt/node
 
 	# Copy the expanded files
-	sudo cp node-v*arm-pi*/* /opt/node
+	sudo cp -r node-v*arm-pi*/* /opt/node
 
 	# Symlink node and npm to somewhere already in the path. Debate where...
 	sudo ln -s -f /opt/node/bin/node /usr/bin/node
@@ -29,7 +29,7 @@ install-on-pi:
 	sudo rm -r -f /opt/phantomjs
 	sudo mkdir /opt/phantomjs
 	# Copy the expanded files
-	sudo cp phantomjs-1.9.0-linux-armv6l /opt/phantomjs
+	sudo cp -r phantomjs-1.9.0-linux-armv6l /opt/phantomjs
 
 	# Fix node executable name
 	# sudo ln -s /usr/bin/nodejs /usr/bin/node
