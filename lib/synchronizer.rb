@@ -101,8 +101,8 @@ class Schedule
   def self.parse_itineraries(serialized_itineraries)
     parsed_itineraries = JSON.parse(serialized_itineraries)
     itineraries = []
-    article_duration = json['article_duration']
-    disable_audio = json['disable_audio']
+    article_duration = parsed_itineraries['article_duration']
+    disable_audio = parsed_itineraries['disable_audio']
     parsed_itineraries.each do |itinerary|
       url = itinerary['url']
       item = itinerary['type'] == 'video' ? Video.new(url, disable_audio) : Article.new(url, article_duration)
