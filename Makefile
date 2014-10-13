@@ -44,7 +44,7 @@ install-on-pi:
 	# Copy signaged to init.d
 	sudo cp signaged /etc/init.d
 	# Add signaged to boot start
-	update-rc.d signaged start
+	update-rc.d signaged start 30
 
 install: install-on-pi
 	mkdir -p downloads
