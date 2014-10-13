@@ -83,7 +83,7 @@ class Article < Loadable
   def make_video
     unless File.exist?(video_path)
       tmp_file = Tempfile.new(filename)
-      spawn("avconv -loop 1 -i #{rendered_image_path} -t #{video_duration} -y #{tmp_file.path}.avi")
+      spawn("avconv -loop 1 -r 10 -i #{rendered_image_path} -t #{video_duration} -y #{tmp_file.path}.avi")
       FileUtils.move("#{tmp_file.path}.avi", video_path)
     end
   end
