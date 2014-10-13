@@ -11,8 +11,8 @@
 ### END INIT INFO
 
 signaged_home="/home/pi/signaged"
-signaged_server="http://192.168.25.11:3000"
-# signaged_server="http://admin.tvopen.com.br"
+#signaged_server="http://192.168.25.11:3000"
+signaged_server="http://admin.tvopen.com.br"
 # machine_serial="CD9AK29HYCGPAH09"
 machine_serial=$(grep -i serial /proc/cpuinfo | cut -d : -f2)
 
