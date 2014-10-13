@@ -82,9 +82,11 @@ class Article < Loadable
 
   def make_video
     unless File.exist?(video_path)
-      tmp_file = Tempfile.new(filename)
-      spawn("avconv -loop 1 -r 10 -i #{rendered_image_path} -t #{video_duration} -y #{tmp_file.path}.avi")
-      FileUtils.move("#{tmp_file.path}.avi", video_path)
+      tmp_file = Tempfile.new([filename, '.avi'])
+      video_maker_command = "avconv -loop 1 -i #{rendered_image_path} -t #{video_duration} -y #{tmp_file.path}"
+      video_maker_pid = spawn(video_maker_command)
+      status = Process.waitpid2(video_maker_pid)
+      FileUtils.move("#{tmp_file.path}", video_path)
     end
   end
 
@@ -143,12 +145,6 @@ class Synchronizer
   def json_response
     begin
       parsed_json = JSON.parse response.body
-
-      File.open("#{$content_dir}/#{@serial}.json", "wb") do |file|
-        file.write(parsed_json)
-      end
-
-      parsed_json
     rescue
       begin
         file = File.open("#{$content_dir}/#{@serial}.json")
@@ -163,6 +159,10 @@ class Synchronizer
 
   def sync
     json = json_response
+    File.open("#{$content_dir}/#{@serial}.json", "wb") do |file|
+      file.write(json)
+    end
+
     article_duration = json['article_duration']
     disable_audio = json['disable_audio']
     json['itineraries'].each do |itinerary|
