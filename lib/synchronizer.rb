@@ -145,6 +145,12 @@ class Synchronizer
   def json_response
     begin
       parsed_json = JSON.parse response.body
+
+      File.open("#{$content_dir}/#{@serial}.json", "wb") do |file|
+        file.write(response.body)
+      end
+
+      parsed_json
     rescue
       begin
         file = File.open("#{$content_dir}/#{@serial}.json")
@@ -159,9 +165,6 @@ class Synchronizer
 
   def sync
     json = json_response
-    File.open("#{$content_dir}/#{@serial}.json", "wb") do |file|
-      file.write(JSON.prety_generate(json))
-    end
 
     article_duration = json['article_duration']
     disable_audio = json['disable_audio']
