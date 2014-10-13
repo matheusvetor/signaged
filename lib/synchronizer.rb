@@ -160,7 +160,7 @@ class Synchronizer
   def sync
     json = json_response
     File.open("#{$content_dir}/#{@serial}.json", "wb") do |file|
-      file.write(json.to_json)
+      file.write(JSON.prety_generate(json))
     end
 
     article_duration = json['article_duration']
