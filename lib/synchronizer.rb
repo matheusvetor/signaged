@@ -54,7 +54,7 @@ end
 class Article < Loadable
   attr_reader :type, :url, :video_duration
 
-  def initialize(url, video_duration = 5)
+  def initialize(url, video_duration = 12)
     @url = URI.parse(url)
     @type = "article"
     @video_duration = video_duration
@@ -163,8 +163,38 @@ class Synchronizer
     end
   end
 
+  def create_wifi_config(json)
+    wifi_config = <<-EOF
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+
+network={
+ssid="#{json['wifi_name']}"
+psk="#{json['wifi_password']}"
+
+# Protocol type can be: RSN (for WP2) and WPA (for WPA1)
+proto=WPA
+
+# Key management type can be: WPA-PSK or WPA-EAP (Pre-Shared or Enterprise)
+key_mgmt=WPA-PSK
+
+# Pairwise can be CCMP or TKIP (for WPA2 or WPA1)
+pairwise=TKIP
+
+#Authorization option should be OPEN for both WPA1/WPA2 (in less commonly used are SHARED and LEAP)
+auth_alg=OPEN
+}
+    EOF
+
+    File.open("/etc/wpa_supplicant/wpa_supplicant.conf", "wb") do |file|
+      file.write(wifi_config)
+    end
+  end
+
   def sync
     json = json_response
+
+    create_wifi_config(json['wifi_config']) unless json['wifi_config'].nil?
 
     article_duration = json['article_duration']
     disable_audio = json['disable_audio']

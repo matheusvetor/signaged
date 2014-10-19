@@ -10,6 +10,9 @@
 # Description: Start signaged at boot time
 ### END INIT INFO
 
+PATH=/usr/local/rvm/rubies/ruby-2.1.3/bin:$PATH
+
+
 signaged_home="/home/pi/signaged"
 #signaged_server="http://192.168.25.11:3000"
 signaged_server="http://admin.tvopen.com.br"
