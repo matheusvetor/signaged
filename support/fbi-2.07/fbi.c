@@ -1390,6 +1390,16 @@ static void cleanup_and_exit(int code)
     exit(code);
 }
 
+static void my_handler(int sig)
+{
+    shadow_fini();
+    fb_clear_screen();
+    //tty_restore();
+    fb_cleanup();
+    //flist_print_tagged(stdout);
+    exit(0);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1399,10 +1409,10 @@ main(int argc, char *argv[])
     char             linebuffer[128];
     struct flist     *fprev = NULL;
 
-#if 0
+#if 1
     /* debug aid, to attach gdb ... */ 
-    fprintf(stderr,"pid %d\n",getpid());
-    sleep(10);
+    fprintf(stdout,"pid %d\n",getpid());
+    //sleep(10);
 #endif
 
     setlocale(LC_ALL,"");
@@ -1449,9 +1459,6 @@ main(int argc, char *argv[])
 
     fbgamma     = GET_GAMMA();
 
-    int tvopen;
-    tvopen      = GET_TVOPEN;
-
     fontname    = cfg_get_str(O_FONT);
     filelist    = cfg_get_str(O_FILE_LIST);
     
@@ -1485,7 +1492,7 @@ main(int argc, char *argv[])
     fb_switch_init();
     shadow_init();
     shadow_set_palette(fd);
-    signal(SIGTSTP,SIG_IGN);
+    signal(SIGTERM, my_handler);
     
     /* svga main loop */
     tty_raw();
