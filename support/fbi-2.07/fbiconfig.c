@@ -141,12 +141,6 @@ struct cfg_cmdline fbi_cfg[] = {
 	.needsarg = 1,
 	.desc     = "set display gamma (doesn't work on all hardware)",
     },{
-	.letter   = 'f',
-	.cmdline  = "font",
-	.option   = { O_FONT },
-	.needsarg = 1,
-	.desc     = "use font <arg> (anything fontconfig accepts)",
-    },{
 	.letter   = 'd',
 	.cmdline  = "device",
 	.option   = { O_DEVICE },

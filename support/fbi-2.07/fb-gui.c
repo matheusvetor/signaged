@@ -7,9 +7,6 @@
 #include <sys/ioctl.h>
 #include <linux/fb.h>
 
-#include <fontconfig/fontconfig.h>
-#include <fontconfig/fcfreetype.h>
-
 #include "fbtools.h"
 #include "dither.h"
 #include "fb-gui.h"
@@ -544,72 +541,6 @@ void shadow_draw_text_box(FT_Face face, int x, int y, int percent, wchar_t *line
 	shadow_draw_string(face, x, y, lines[i], -1);
 	y += (face->size->metrics.height >> 6);
     }
-}
-
-/* ---------------------------------------------------------------------- */
-/* fontconfig + freetype font rendering                                   */
-
-static FT_Library freetype;
-
-void font_init(void)
-{
-    int rc;
-    
-    FcInit();
-    rc = FT_Init_FreeType(&freetype);
-    if (rc) {
-	fprintf(stderr,"FT_Init_FreeType() failed\n");
-	exit(1);
-    }
-}
-
-FT_Face font_open(char *fcname)
-{
-    FcResult    result = 0;
-    FT_Face     face = NULL;
-    FcPattern   *pattern,*match;
-    char        *fontname,*h;
-    FcChar8     *filename;
-    double      pixelsize;
-    int         rc;
-
-    /* parse + match font name */
-    pattern = FcNameParse(fcname);
-    FcConfigSubstitute(NULL, pattern, FcMatchPattern);
-    FcDefaultSubstitute(pattern);
-    match = FcFontMatch (0, pattern, &result);
-    FcPatternDestroy(pattern);
-    if (FcResultMatch != result)
-	return NULL;
-    fontname = FcNameUnparse(match);
-    h = strchr(fontname, ':');
-    if (h)
-	*h = 0;
-
-    /* try get the face directly */
-    result = FcPatternGetFTFace(match, FC_FT_FACE, 0, &face);
-    if (FcResultMatch == result) {
-	//fprintf(stderr,"using \"%s\", face=%p\n",fontname,face);
-	return face;
-    }
-
-    /* failing that use the filename */
-    result = FcPatternGetString (match, FC_FILE, 0, &filename);
-    if (FcResultMatch == result) {
-	result = FcPatternGetDouble(match, FC_PIXEL_SIZE, 0, &pixelsize);
-	if (FcResultMatch != result)
-	    pixelsize = 16;
-	//fprintf(stderr,"using \"%s\", pixelsize=%.2lf file=%s\n",
-	//	fontname,pixelsize,filename);
-	rc = FT_New_Face (freetype, filename, 0, &face);
-	if (rc)
-	    return NULL;
-	FT_Set_Pixel_Sizes(face, 0, (int)pixelsize);
-	return face;
-    }
-
-    /* oops, didn't work */
-    return NULL;
 }
 
 /* ---------------------------------------------------------------------- */

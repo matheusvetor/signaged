@@ -135,10 +135,6 @@ int editable;
 int blend_msecs;
 int perfmon = 0;
 
-/* font handling */
-static char *fontname = NULL;
-static FT_Face face;
-
 /* ---------------------------------------------------------------------- */
 /* fwd declarations                                                       */
 
@@ -628,7 +624,7 @@ static void effect_blend(struct flist *f, struct flist *t)
 
 static int
 svga_show(struct flist *f, struct flist *prev,
-	  int timeout, char *desc, char *info, int *nr)
+	  int timeout, int *nr)
 {
     static int        paused = 0, skip = KEY_SPACE;
 
@@ -837,19 +833,6 @@ static char *my_basename(char *filename)
     return filename;
 }
 
-static char *make_info(struct ida_image *img, float scale)
-{
-    static char linebuffer[128];
-    
-    snprintf(linebuffer, sizeof(linebuffer),
-	     "%s%.0f%% %dx%d %d/%d",
-	     fcurrent->tag ? "* " : "",
-	     scale*100,
-	     img->i.width, img->i.height,
-	     fcurrent->nr, fcount);
-    return linebuffer;
-}
-
 /* ---------------------------------------------------------------------- */
 
 static struct ida_image *flist_img_get(struct flist *f)
@@ -1029,7 +1012,7 @@ main(int argc, char *argv[])
 {
     int              once;
     int              i, arg, key;
-    char             *info, *filelist;
+    char             *filelist;
     char             linebuffer[128];
     struct flist     *fprev = NULL;
 
@@ -1076,7 +1059,6 @@ main(int argc, char *argv[])
 
     fbgamma     = GET_GAMMA();
 
-    fontname    = cfg_get_str(O_FONT);
     filelist    = cfg_get_str(O_FILE_LIST);
     
     if (filelist)
@@ -1094,14 +1076,6 @@ main(int argc, char *argv[])
 	flist_randomize();
     fcurrent = flist_first();
 
-    font_init();
-    if (NULL == fontname)
-	fontname = "monospace:size=16";
-    face = font_open(fontname);
-    if (NULL == face) {
-	fprintf(stderr,"can't open font: %s\n",fontname);
-	exit(1);
-    }
     fd = fb_init(cfg_get_str(O_DEVICE),
 		 cfg_get_str(O_VIDEO_MODE),
 		 GET_VT());
@@ -1113,16 +1087,12 @@ main(int argc, char *argv[])
     
     /* svga main loop */
     tty_raw();
-    info = NULL;
     for (;;) {
 	flist_img_load(fcurrent, 0);
 	flist_img_release_memory();
 	img = flist_img_get(fcurrent);
-	if (img) {
-	    info = make_info(fcurrent->fimg, fcurrent->scale);
-	}
 
-	key = svga_show(fcurrent, fprev, timeout, NULL, info, &arg);
+	key = svga_show(fcurrent, fprev, timeout, &arg);
 	fprev = fcurrent;
 	switch (key) {
 	case KEY_DELETE:

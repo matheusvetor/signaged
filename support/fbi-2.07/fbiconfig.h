@@ -32,7 +32,6 @@
 #define O_GAMMA		        O_OPTIONS, "gamma"
 
 #define O_DEVICE                O_OPTIONS, "device"
-#define O_FONT                  O_OPTIONS, "font"
 #define O_VIDEO_MODE            O_OPTIONS, "video-mode"
 
 #define O_TVOPEN                O_OPTIONS, "tvopen"

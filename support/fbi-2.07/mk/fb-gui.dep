@@ -53,10 +53,8 @@ fb-gui.o: fb-gui.c /usr/include/stdio.h /usr/include/features.h \
  /usr/include/asm-generic/bitsperlong.h /usr/include/linux/posix_types.h \
  /usr/include/linux/stddef.h \
  /usr/include/arm-linux-gnueabihf/asm/posix_types.h \
- /usr/include/linux/i2c.h /usr/include/fontconfig/fontconfig.h \
- /usr/include/arm-linux-gnueabihf/sys/stat.h \
- /usr/include/arm-linux-gnueabihf/bits/stat.h \
- /usr/include/fontconfig/fcfreetype.h /usr/include/ft2build.h \
+ /usr/include/linux/i2c.h fbtools.h dither.h fb-gui.h \
+ /usr/include/ft2build.h \
  /usr/include/freetype2/freetype/config/ftheader.h \
  /usr/include/freetype2/freetype/freetype.h \
  /usr/include/freetype2/freetype/config/ftconfig.h \
@@ -76,5 +74,5 @@ fb-gui.o: fb-gui.c /usr/include/stdio.h /usr/include/features.h \
  /usr/include/freetype2/freetype/fterrdef.h \
  /usr/include/freetype2/freetype/fttypes.h \
  /usr/include/freetype2/freetype/ftsystem.h \
- /usr/include/freetype2/freetype/ftimage.h fbtools.h dither.h fb-gui.h \
+ /usr/include/freetype2/freetype/ftimage.h \
  /usr/include/freetype2/freetype/ftglyph.h
