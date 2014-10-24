@@ -55,7 +55,7 @@ term_signal_handler = proc {
 Signal.trap("INT", term_signal_handler)
 Signal.trap("TERM", term_signal_handler)
 
-kill_screen = system("/usr/bin/tvservice -p")
+#system("/usr/bin/tvservice -p")
 
 while !should_end
   command_seq.each do |it|
