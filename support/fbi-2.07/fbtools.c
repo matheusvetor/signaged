@@ -156,17 +156,7 @@ fb_switch_init()
 void
 fb_memset (void *addr, int c, size_t len)
 {
-#if 1 /* defined(__powerpc__) */
-    unsigned int i, *p;
-    
-    i = (c & 0xff) << 8;
-    i |= i << 16;
-    len >>= 2;
-    for (p = addr; len--; p++)
-	*p = i;
-#else
     memset(addr, c, len);
-#endif
 }
 
 static int
