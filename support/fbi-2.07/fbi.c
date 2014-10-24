@@ -406,33 +406,6 @@ static void status_edit(unsigned char *msg, int pos)
     shadow_render();
 }
 
-static void show_help(void)
-{
-    static wchar_t *help[] = {
-	L"keyboard commands",
-	L"~~~~~~~~~~~~~~~~~",
-	L"  ESC, Q      - quit",
-	L"  pgdn, space - next image",
-	L"  pgup        - previous image",
-	L"  +/-         - zoom in/out",
-	L"  A           - autozoom image",
-	L"  cursor keys - scroll image",
-	L"",
-	L"  H           - show this help text",
-	L"  P           - pause slideshow",
-	L"",
-	L"available if started with --edit switch,",
-	L"rotation works for jpeg images only:",
-	L"  shift+D     - delete image",
-	L"  R           - rotate clockwise",
-	L"  L           - rotate counter-clockwise",
-    };
-
-    shadow_draw_text_box(face, 24, 16, transparency,
-			 help, ARRAY_SIZE(help));
-    shadow_render();
-}
-
 /* ---------------------------------------------------------------------- */
 
 struct termios  saved_attributes;
@@ -689,7 +662,6 @@ svga_show(struct flist *f, struct flist *prev,
     static int        paused = 0, skip = KEY_SPACE;
 
     struct ida_image  *img = flist_img_get(f);
-    int               help = 0;
     int               rc;
     char              key[11];
     fd_set            set;
@@ -849,16 +821,6 @@ svga_show(struct flist *f, struct flist *prev,
 		   0 == strcmp(key, "L")) {
 	    return KEY_ROT_CCW;
 	    
-	} else if (0 == strcmp(key, "h") ||
-		   0 == strcmp(key, "H")) {
-	    if (!help) {
-		show_help();
-		help = 1;
-	    } else {
-		redraw = 1;
-		help = 0;
-	    }
-
 	} else if (0 == strcmp(key, "t") ||
 		   0 == strcmp(key, "T")) {
 	    return KEY_DESC;
