@@ -42,7 +42,8 @@ HAVE_LIBPNG	:= $(call ac_lib,png_read_info,png,-lz)
 HAVE_LIBTIFF	:= $(call ac_lib,TIFFOpen,tiff)
 #HAVE_LIBMAGICK	:= $(call ac_binary,Magick-config)
 HAVE_LIBSANE	:= $(call ac_lib,sane_init,sane)
-HAVE_LIBCURL	:= $(call ac_lib,curl_easy_init,curl)
+# Forcefully disable cURL
+HAVE_LIBCURL	:= no
 HAVE_LIBLIRC	:= $(call ac_lib,lirc_init,lirc_client)
 HAVE_MOTIF	:= $(call ac_lib,XmStringGenerate,Xm,-L/usr/X11R6/$(LIB) -lXpm -lXt -lXext -lX11)
 endef
