@@ -1081,11 +1081,16 @@ main(int argc, char *argv[])
     fd = fb_init(cfg_get_str(O_DEVICE),
 		 cfg_get_str(O_VIDEO_MODE),
 		 GET_VT());
+    if (reset) {
+        fb_clear_screen();
+        fb_cleanup();
+        exit(0);
+    }
     fb_catch_exit_signals();
     fb_switch_init();
     shadow_init();
     shadow_set_palette(fd);
-    signal(SIGTERM, my_handler);
+    signal(SIGTSTP, SIG_IGN);
     
     /* svga main loop */
     tty_raw();
