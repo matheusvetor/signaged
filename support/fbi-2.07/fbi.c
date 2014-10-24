@@ -1394,7 +1394,6 @@ main(int argc, char *argv[])
 #endif
 
     setlocale(LC_ALL,"");
-    fbi_read_config();
     cfg_parse_cmdline(&argc,argv,fbi_cmd);
     cfg_parse_cmdline(&argc,argv,fbi_cfg);
 
@@ -1411,8 +1410,6 @@ main(int argc, char *argv[])
 	version();
 	exit(0);
     }
-    if (GET_WRITECONF())
-	fbi_write_config();
 
     once        = GET_ONCE();
     autoup      = GET_AUTO_UP();
