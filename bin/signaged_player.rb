@@ -72,11 +72,11 @@ while !should_end
         puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
       end
     when "article"
-      timeout = 15
+      timeout = 5
       # params = it.items.map{|i| Shellwords.escape(i.video_path) }
       params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }
       params.each do |p|
-        command = "fbi -T 2 -a -noverbose #{p}"
+        command = "fbi -T 2 -a -noverbose #{p} > /dev/null"
         # command = "omxplayer -o hdmi #{p} > /dev/null"
         #puts "#{$PROGRAM_NAME}: spawn: #{command}"
         image_player_pid = spawn(command)
