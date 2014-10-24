@@ -59,7 +59,6 @@
 #define KEY_TAGFILE    -8
 #define KEY_PLUS       -9
 #define KEY_MINUS     -10
-#define KEY_VERBOSE   -11
 #define KEY_ASCALE    -12
 #define KEY_DESC      -13
 
@@ -85,7 +84,7 @@ int32_t         lut_red[256], lut_green[256], lut_blue[256];
 int             dither = FALSE, pcd_res = 3;
 int             v_steps = 50;
 int             h_steps = 50;
-int             textreading = 0, redraw = 0, statusline = 1;
+int             textreading = 0, redraw = 0;
 int             fitwidth;
 
 /* file list */
@@ -389,39 +388,11 @@ static void status_prepare(void)
     shadow_draw_line(0, fb_var.xres-1, y1-1, y1-1);
 }
 
-static void status_update(unsigned char *desc, char *info)
+static void log_error(unsigned char *msg)
 {
-    int yt = fb_var.yres + (face->size->metrics.descender >> 6);
-    wchar_t str[128];
-    
-    if (!statusline)
-	return;
-    status_prepare();
-
-    swprintf(str,ARRAY_SIZE(str),L"%s",desc);
-    shadow_draw_string(face, 0, yt, str, -1);
-    if (info) {
-	swprintf(str,ARRAY_SIZE(str), L"[ %s ] H - Help", info);
-    } else {
-	swprintf(str,ARRAY_SIZE(str), L"| H - Help");
-    }
-    shadow_draw_string(face, fb_var.xres, yt, str, 1);
-
-    shadow_render();
-}
-
-static void status_error(unsigned char *msg)
-{
-    int yt = fb_var.yres + (face->size->metrics.descender >> 6);
-    wchar_t str[128];
-
-    status_prepare();
-
-    swprintf(str,ARRAY_SIZE(str), L"%s", msg);
-    shadow_draw_string(face, 0, yt, str, -1);
-
-    shadow_render();
-    sleep(2);
+    // This message used to be drawn on the screen (status_error()).
+    // Now we simply write the message to stderr.
+    fwprintf(stderr, L"%s", msg);
 }
 
 static void status_edit(unsigned char *msg, int pos)
@@ -537,7 +508,6 @@ static void show_help(void)
 	L"  H           - show this help text",
 	L"  I           - show EXIF info",
 	L"  P           - pause slideshow",
-	L"  V           - toggle statusline",
 	L"",
 	L"available if started with --edit switch,",
 	L"rotation works for jpeg images only:",
@@ -591,7 +561,6 @@ static void debug_key(char *key)
 			"%s%c",
 			key[i] < 0x20 ? "^" : "",
 			key[i] < 0x20 ? key[i] + 0x40 : key[i]);
-    status_update(linebuffer, NULL);
 }
 
 static void
@@ -783,7 +752,6 @@ static void effect_blend(struct flist *f, struct flist *t)
 	if (perfmon) {
 	    pos += snprintf(linebuffer+pos, sizeof(linebuffer)-pos,
 			    " %d%%", weight);
-	    status_update(linebuffer, NULL);
 	    count++;
 	}
 
@@ -797,7 +765,6 @@ static void effect_blend(struct flist *f, struct flist *t)
 	pos += snprintf(linebuffer+pos, sizeof(linebuffer)-pos,
 			" | %d/%d -> %d msec",
 			msecs, count, msecs/count);
-	status_update(linebuffer, NULL);
 	shadow_render();
 	sleep(2);
     }
@@ -849,14 +816,12 @@ svga_show(struct flist *f, struct flist *prev,
 	    } else {
 		shadow_draw_image(img, f->left, f->top, 0, fb_var.yres-1, 100);
 	    }
-	    status_update(desc, info);
 	    shadow_render();
 
 	    if (read_ahead) {
 		struct flist *f = flist_next(fcurrent,1,0);
 		if (f && !f->fimg)
 		    flist_img_load(f,1);
-		status_update(desc, info);
 		shadow_render();
 	    }
 	}
@@ -961,7 +926,6 @@ svga_show(struct flist *f, struct flist *prev,
 		   0 == strcmp(key, "P")) {
 	    if (0 != timeout) {
 		paused = !paused;
-		status_update(paused ? "pause on " : "pause off", NULL);
 	    }
 
 	} else if (0 == strcmp(key, "D")) {
@@ -995,10 +959,6 @@ svga_show(struct flist *f, struct flist *prev,
 	    }
 	    help = 0;
 
-	} else if (0 == strcmp(key, "v") ||
-		   0 == strcmp(key, "V")) {
-	    return KEY_VERBOSE;
-
 	} else if (0 == strcmp(key, "t") ||
 		   0 == strcmp(key, "T")) {
 	    return KEY_DESC;
@@ -1012,7 +972,6 @@ svga_show(struct flist *f, struct flist *prev,
 	} else if (rc == 1 && *key >= '0' && *key <= '9') {
 	    *nr = *nr * 10 + (*key - '0');
 	    snprintf(linebuffer, sizeof(linebuffer), "> %d",*nr);
-	    status_update(linebuffer, NULL);
 	} else {
 	    *nr = 0;
 #if 0
@@ -1264,7 +1223,7 @@ static void *flist_malloc(size_t size)
 	if (ptr)
 	    return ptr;
 	if (0 != flist_img_free_lru()) {
-	    status_error("Oops: out of memory, exiting");
+	    log_error("Oops: out of memory, exiting");
 	    exit(1);
 	}
     }
@@ -1288,13 +1247,12 @@ static void flist_img_scale(struct flist *f, float scale, int prefetch)
 	    snprintf(linebuffer, sizeof(linebuffer),
 		     "scaling (%.0f%%) %s ...",
 		     scale*100, f->name);
-	    status_update(linebuffer, NULL);
 	}
 	f->simg = scale_image(f->fimg,scale);
 	if (!f->simg) {
 	    snprintf(linebuffer,sizeof(linebuffer),
 		     "%s: scaling FAILED",f->name);
-	    status_error(linebuffer);
+	    log_error(linebuffer);
 	}
     }
     f->scale = scale;
@@ -1314,12 +1272,11 @@ static void flist_img_load(struct flist *f, int prefetch)
 
     snprintf(linebuffer,sizeof(linebuffer),"%s %s ...",
 	     prefetch ? "prefetch" : "loading", f->name);
-    status_update(linebuffer, NULL);
     f->fimg = read_image(f->name);
     if (!f->fimg) {
 	snprintf(linebuffer,sizeof(linebuffer),
 		 "%s: loading FAILED",f->name);
-	status_error(linebuffer);
+	log_error(linebuffer);
 	return;
     }
 
@@ -1415,7 +1372,6 @@ main(int argc, char *argv[])
     autoup      = GET_AUTO_UP();
     autodown    = GET_AUTO_DOWN();
     fitwidth    = GET_FIT_WIDTH();
-    statusline  = GET_VERBOSE();
     textreading = GET_TEXT_MODE();
     editable    = GET_EDIT();
     backup      = GET_BACKUP();
@@ -1498,7 +1454,7 @@ main(int argc, char *argv[])
 		    cleanup_and_exit(0);
 		}
 	    } else {
-		status_error("readonly mode, sorry [start with --edit?]");
+		log_error("readonly mode, sorry [start with --edit?]");
 	    }
 	    break;
 	case KEY_ROT_CW:
@@ -1507,7 +1463,6 @@ main(int argc, char *argv[])
 	    if (editable) {
 		snprintf(linebuffer,sizeof(linebuffer),
 			 "rotating %s ...",fcurrent->name);
-		status_update(linebuffer, NULL);
 		jpeg_transform_inplace
 		    (fcurrent->name,
 		     (key == KEY_ROT_CW) ? JXFORM_ROT_90 : JXFORM_ROT_270,
@@ -1520,7 +1475,7 @@ main(int argc, char *argv[])
 		     JFLAG_UPDATE_ORIENTATION);
 		flist_img_free(fcurrent);
 	    } else {
-		status_error("readonly mode, sorry [start with --edit?]");
+		log_error("readonly mode, sorry [start with --edit?]");
 	    }
 	    break;
 	}
@@ -1580,16 +1535,6 @@ main(int argc, char *argv[])
 	    break;
 	case KEY_DELAY:
 	    timeout = arg;
-	    break;
-	case KEY_VERBOSE:
-#if 0 /* fbdev testing/debugging hack */
-	    {
-		ioctl(fd,FBIOBLANK,1);
-		sleep(1);
-		ioctl(fd,FBIOBLANK,0);
-	    }
-#endif
-	    statusline = !statusline;
 	    break;
 	case KEY_DESC:
 	    if (!comments) {

@@ -67,12 +67,6 @@ struct cfg_cmdline fbi_cfg[] = {
 	.desc     = "  use width only for autoscaling",
 
     },{
-	.letter   = 'v',
-	.cmdline  = "verbose",
-	.option   = { O_VERBOSE },
-	.yesno    = 1,
-	.desc     = "show filenames all the time",
-    },{
 	.letter   = 'u',
 	.cmdline  = "random",
 	.option   = { O_RANDOM },
