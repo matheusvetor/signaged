@@ -36,7 +36,7 @@ INSTALL_DATA	:= $(INSTALL) -m 644
 INSTALL_DIR	:= $(INSTALL) -d
 
 # cflags
-CFLAGS  	?= $(shell dpkg-buildflags --get CFLAGS)
+CFLAGS  	?= $(shell dpkg-buildflags --get CFLAGS) -g -pg -O2
 CXXFLAGS	?= $(CFLAGS)
 CFLAGS		+= -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -Wpointer-arith -Wunused
@@ -49,7 +49,7 @@ ifneq ($(wildcard /usr/local/include/*.h),)
   LDFLAGS += -L/usr/local/$(LIB)
 endif
 
-LDFLAGS 	?= $(shell dpkg-buildflags --get LDFLAGS)
+LDFLAGS 	?= $(shell dpkg-buildflags --get LDFLAGS) -g -pg
 
 # fixup include path for $(srcdir) != "."
 ifneq ($(srcdir),.)
