@@ -49,3 +49,6 @@ tags
 node_modules/
 downloads/
 *.o
+support/fbi-2.07/mk/*.dep
+support/fbi-2.07core
+support/fbi-2.07core.*
