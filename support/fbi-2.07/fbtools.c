@@ -450,7 +450,8 @@ void
 fb_cleanup(void)
 {
     /* restore console */
-    if (-1 == ioctl(tty,KDSETMODE, kd_mode))
+    // don't restore to kd_mode. Set graphics mode instead
+    if (-1 == ioctl(tty,KDSETMODE, KD_GRAPHICS))
 	perror("ioctl KDSETMODE");
     if (-1 == ioctl(fb,FBIOPUT_VSCREENINFO,&fb_ovar))
 	perror("ioctl FBIOPUT_VSCREENINFO");
@@ -507,6 +508,7 @@ fb_catch_exit_signals(void)
     if (0 == (termsig = sigsetjmp(fb_fatal_cleanup,0)))
 	return;
 
+    fb_clear_screen();
     /* cleanup */
     fb_cleanup();
     fprintf(stderr,"Oops: %s\n",sys_siglist[termsig]);
