@@ -48,3 +48,4 @@ tags
 
 node_modules/
 downloads/
+*.o
