@@ -648,7 +648,7 @@ FT_Face font_open(char *fcname)
     /* try get the face directly */
     result = FcPatternGetFTFace(match, FC_FT_FACE, 0, &face);
     if (FcResultMatch == result) {
-	fprintf(stderr,"using \"%s\", face=%p\n",fontname,face);
+	//fprintf(stderr,"using \"%s\", face=%p\n",fontname,face);
 	return face;
     }
 
@@ -658,8 +658,8 @@ FT_Face font_open(char *fcname)
 	result = FcPatternGetDouble(match, FC_PIXEL_SIZE, 0, &pixelsize);
 	if (FcResultMatch != result)
 	    pixelsize = 16;
-	fprintf(stderr,"using \"%s\", pixelsize=%.2lf file=%s\n",
-		fontname,pixelsize,filename);
+	//fprintf(stderr,"using \"%s\", pixelsize=%.2lf file=%s\n",
+	//	fontname,pixelsize,filename);
 	rc = FT_New_Face (freetype, filename, 0, &face);
 	if (rc)
 	    return NULL;

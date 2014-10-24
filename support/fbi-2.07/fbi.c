@@ -29,11 +29,6 @@
 
 #include <libexif/exif-data.h>
 
-#ifdef HAVE_LIBLIRC
-# include "lirc/lirc_client.h"
-# include "lirc.h"
-#endif
-
 #include "readers.h"
 #include "dither.h"
 #include "fbtools.h"
@@ -872,12 +867,6 @@ svga_show(struct flist *f, struct flist *prev,
 	FD_ZERO(&set);
 	FD_SET(0, &set);
 	fdmax = 1;
-#ifdef HAVE_LIBLIRC
-	if (-1 != lirc) {
-	    FD_SET(lirc,&set);
-	    fdmax = lirc+1;
-	}
-#endif
 	limit.tv_sec = timeout;
 	limit.tv_usec = 0;
 	rc = select(fdmax, &set, NULL, NULL,
@@ -898,17 +887,6 @@ svga_show(struct flist *f, struct flist *prev,
 	    }
 	    key[rc] = 0;
 	}
-#ifdef HAVE_LIBLIRC
-	if (lirc != -1 && FD_ISSET(lirc,&set)) {
-	    /* lirc input */
-	    if (-1 == lirc_fbi_havedata(&rc,key)) {
-		fprintf(stderr,"lirc: connection lost\n");
-		close(lirc);
-		lirc = -1;
-	    }
-	    key[rc] = 0;
-        }
-#endif
 
 	if (rc == 1 && (*key == 'q'    || *key == 'Q' ||
 			*key == 'e'    || *key == 'E' ||
@@ -1409,16 +1387,13 @@ main(int argc, char *argv[])
     char             linebuffer[128];
     struct flist     *fprev = NULL;
 
-#if 1
+#if 0
     /* debug aid, to attach gdb ... */ 
     fprintf(stdout,"pid %d\n",getpid());
-    //sleep(10);
+    sleep(10);
 #endif
 
     setlocale(LC_ALL,"");
-#ifdef HAVE_LIBLIRC
-    lirc = lirc_fbi_init();
-#endif
     fbi_read_config();
     cfg_parse_cmdline(&argc,argv,fbi_cmd);
     cfg_parse_cmdline(&argc,argv,fbi_cfg);

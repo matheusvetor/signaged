@@ -76,7 +76,7 @@ while !should_end
       # params = it.items.map{|i| Shellwords.escape(i.video_path) }
       params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }
       params.each do |p|
-        command = "fbi -T 1 -a -noverbose #{p} > /dev/null"
+        command = "fbi -T 2 -a -noverbose #{p} > /dev/null"
         # command = "omxplayer -o hdmi #{p} > /dev/null"
         #puts "#{$PROGRAM_NAME}: spawn: #{command}"
         image_player_pid = spawn(command)
