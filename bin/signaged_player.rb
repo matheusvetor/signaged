@@ -66,26 +66,24 @@ while !should_end
       it.items.each do |p|
         file_path = Shellwords.escape(p.file_path)
         command = "omxplayer -o hdmi #{file_path} > /dev/null"
-        # puts "#{$PROGRAM_NAME}: spawn: #{command}"
+        puts "#{$PROGRAM_NAME}: spawn: #{command}"
         video_player_pid = spawn(command)
         status = Process.waitpid2(video_player_pid)
-        # puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
+        puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
       end
     when "article"
       timeout = 15
       # params = it.items.map{|i| Shellwords.escape(i.video_path) }
       params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }
       params.each do |p|
-        command = "fbi -T 2 -a -noverbose #{p} > /dev/null"
+        command = "fbi -T 2 -a -noverbose #{p}"
         # command = "omxplayer -o hdmi #{p} > /dev/null"
         #puts "#{$PROGRAM_NAME}: spawn: #{command}"
         image_player_pid = spawn(command)
-        # puts "pid: #{image_player_pid}"
-        # status = Process.waitpid2(image_player_pid)
+        puts "#{$PROGRAM_NAME}: spawn: #{command}"
         sleep timeout
-	# Process.kill("INT", image_player_pid)
-	system("killall fbi")
-        # puts "#{$PROGRAM_NAME}: fbi finished: #{status[1]}"
+	killall_pid = system("killall fbi")
+        puts "#{$PROGRAM_NAME}: fbi probably killed"
       end
     end
   end

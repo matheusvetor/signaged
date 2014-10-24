@@ -50,7 +50,7 @@ while true
 
     # spawn the player
     serialized_itineraries = Shellwords.escape JSON.generate(current_schedule['itineraries'])
-    player_pid = spawn("#{base_dir}/signaged_player.rb #{serialized_itineraries}")
+    player_pid = spawn("#{base_dir}/signaged_player.rb #{serialized_itineraries} > /dev/null")
   end
 
   last_schedule_id = current_schedule['id']
