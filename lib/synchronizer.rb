@@ -63,7 +63,7 @@ class Article < Loadable
   def download
     super
     download_rendered_page
-    make_video
+    #make_video
   end
 
   def rendered_page_response

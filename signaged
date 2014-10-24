@@ -48,6 +48,7 @@ function start() {
         start_html2img
         sleep 15
         echo "Starting signaged ..."
+        fbi -T 2 -reset
         $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
     fi
 }
@@ -62,7 +63,7 @@ function stop() {
     else
         echo "signaged is not running"
     fi
-    killall -8 ruby node omxplayer
+    killall fbi ruby node omxplayer
 }
 
 case "$1" in
