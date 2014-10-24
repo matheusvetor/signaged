@@ -998,16 +998,6 @@ static void cleanup_and_exit(int code)
     exit(code);
 }
 
-static void my_handler(int sig)
-{
-    shadow_fini();
-    fb_clear_screen();
-    //tty_restore();
-    fb_cleanup();
-    //flist_print_tagged(stdout);
-    exit(0);
-}
-
 int
 main(int argc, char *argv[])
 {
