@@ -52,3 +52,5 @@ downloads/
 support/fbi-2.07/mk/*.dep
 support/fbi-2.07core
 support/fbi-2.07core.*
+support/fbi-2.07/exiftran
+support/fbi-2.07/fbi

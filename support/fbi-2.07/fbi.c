@@ -1040,6 +1040,7 @@ main(int argc, char *argv[])
 	version();
 	exit(0);
     }
+       
 
     once        = GET_ONCE();
     autoup      = GET_AUTO_UP();
