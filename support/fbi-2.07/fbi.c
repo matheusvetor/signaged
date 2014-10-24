@@ -27,8 +27,6 @@
 
 #include <jpeglib.h>
 
-#include <libexif/exif-data.h>
-
 #include "readers.h"
 #include "dither.h"
 #include "fbtools.h"
@@ -408,91 +406,6 @@ static void status_edit(unsigned char *msg, int pos)
     shadow_render();
 }
 
-static void show_exif(struct flist *f)
-{
-    static unsigned int tags[] = {
-	0x010f, // Manufacturer
-	0x0110, // Model
-
-	0x0112, // Orientation
-	0x0132, // Date and Time
-
-	0x01e3, // White Point
-	0x829a, // Exposure Time
-	0x829d, // FNumber
-	0x9206, // Subject Distance
-	0xa40c, // Subject Distance Range
-	0xa405, // Focal Length In 35mm Film
-	0x9209, // Flash
-    };
-    ExifData   *ed;
-    ExifEntry  *ee;
-    unsigned int tag,l1,l2,len,count,i;
-    const char *title[ARRAY_SIZE(tags)];
-    char *value[ARRAY_SIZE(tags)];
-    wchar_t *linebuffer[ARRAY_SIZE(tags)];
-
-    if (!visible)
-	return;
-
-    ed = exif_data_new_from_file(f->name);
-    if (NULL == ed) {
-	status_error("image has no EXIF data");
-	return;
-    }
-
-    /* pass one -- get data + calc size */
-    l1 = 0;
-    l2 = 0;
-    for (tag = 0; tag < ARRAY_SIZE(tags); tag++) {
-	ee = exif_content_get_entry (ed->ifd[EXIF_IFD_0], tags[tag]);
-	if (NULL == ee)
-	    ee = exif_content_get_entry (ed->ifd[EXIF_IFD_EXIF], tags[tag]);
-	if (NULL == ee) {
-	    title[tag] = NULL;
-	    value[tag] = NULL;
-	    continue;
-	}
-	title[tag] = exif_tag_get_title(tags[tag]);
-#ifdef HAVE_NEW_EXIF
-	value[tag] = malloc(128);
-	exif_entry_get_value(ee, value[tag], 128);
-#else
-	value[tag] = strdup(exif_entry_get_value(ee));
-#endif
-	len = strlen(title[tag]);
-	if (l1 < len)
-	    l1 = len;
-	len = strlen(value[tag]);
-	if (l2 < len)
-	    l2 = len;
-    }
-
-    /* pass two -- print stuff */
-    count = 0;
-    for (tag = 0; tag < ARRAY_SIZE(tags); tag++) {
-	if (NULL == title[tag])
-	    continue;
-	linebuffer[count] = malloc(sizeof(wchar_t)*(l1+l2+8));
-	swprintf(linebuffer[count], l1+l2+8,
-		 L"%-*.*s : %-*.*s",
-		 l1, l1, title[tag],
-		 l2, l2, value[tag]);
-	count++;
-    }
-    shadow_draw_text_box(face, 24, 16, transparency,
-			 linebuffer, count);
-    shadow_render();
-
-    /* pass three -- free data */
-    for (tag = 0; tag < ARRAY_SIZE(tags); tag++)
-	if (NULL != value[tag])
-	    free(value[tag]);
-    exif_data_unref (ed);
-    for (i = 0; i < count; i++)
-	free(linebuffer[i]);
-}
-
 static void show_help(void)
 {
     static wchar_t *help[] = {
@@ -506,7 +419,6 @@ static void show_help(void)
 	L"  cursor keys - scroll image",
 	L"",
 	L"  H           - show this help text",
-	L"  I           - show EXIF info",
 	L"  P           - pause slideshow",
 	L"",
 	L"available if started with --edit switch,",
@@ -777,7 +689,7 @@ svga_show(struct flist *f, struct flist *prev,
     static int        paused = 0, skip = KEY_SPACE;
 
     struct ida_image  *img = flist_img_get(f);
-    int               exif = 0, help = 0;
+    int               help = 0;
     int               rc;
     char              key[11];
     fd_set            set;
@@ -946,18 +858,6 @@ svga_show(struct flist *f, struct flist *prev,
 		redraw = 1;
 		help = 0;
 	    }
-	    exif = 0;
-
-	} else if (0 == strcmp(key, "i") ||
-		   0 == strcmp(key, "I")) {
-	    if (!exif) {
-		show_exif(fcurrent);
-		exif = 1;
-	    } else {
-		redraw = 1;
-		exif = 0;
-	    }
-	    help = 0;
 
 	} else if (0 == strcmp(key, "t") ||
 		   0 == strcmp(key, "T")) {
