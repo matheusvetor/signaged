@@ -131,6 +131,7 @@ int timeout;
 int backup;
 int preserve;
 int read_ahead;
+int reset;
 int editable;
 int blend_msecs;
 int perfmon = 0;
@@ -1049,6 +1050,7 @@ main(int argc, char *argv[])
     backup      = GET_BACKUP();
     preserve    = GET_PRESERVE();
     read_ahead  = GET_READ_AHEAD();
+    reset       = GET_RESET();
 
     max_mem_mb  = GET_CACHE_MEM();
     blend_msecs = GET_BLEND_MSECS();
@@ -1067,7 +1069,7 @@ main(int argc, char *argv[])
 	flist_add(argv[i]);
     flist_renumber();
 
-    if (0 == fcount) {
+    if (0 == fcount && !reset) {
 	usage(argv[0]);
 	exit(1);
     }

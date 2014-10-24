@@ -101,6 +101,12 @@ struct cfg_cmdline fbi_cfg[] = {
 	.desc     = "read ahead images into cache",
 
     },{
+	.cmdline  = "reset",
+	.option   = { O_RESET },
+	.yesno    = 1,
+	.desc     = "clear the framebuffer and exit",
+
+    },{
 	.cmdline  = "cachemem",
 	.option   = { O_CACHE_MEM },
 	.needsarg = 1,

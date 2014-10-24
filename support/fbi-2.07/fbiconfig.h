@@ -21,6 +21,7 @@
 #define O_BACKUP		O_OPTIONS, "backup"
 #define O_PRESERVE		O_OPTIONS, "preserve"
 #define O_READ_AHEAD		O_OPTIONS, "read-ahead"
+#define O_RESET			O_OPTIONS, "reset"
 
 #define O_CACHE_MEM    	        O_OPTIONS, "cache-mem"
 #define O_BLEND_MSECS		O_OPTIONS, "blend-msecs"
@@ -53,6 +54,7 @@
 #define GET_BACKUP()		cfg_get_bool(O_BACKUP,        0)
 #define GET_PRESERVE()		cfg_get_bool(O_PRESERVE,      0)
 #define GET_READ_AHEAD()       	cfg_get_bool(O_READ_AHEAD,    0)
+#define GET_RESET()	       	cfg_get_bool(O_RESET,         0)
 
 #define GET_CACHE_MEM()         cfg_get_int(O_CACHE_MEM,    256)
 #define GET_BLEND_MSECS()       cfg_get_int(O_BLEND_MSECS,    0)
