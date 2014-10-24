@@ -79,11 +79,6 @@ struct cfg_cmdline fbi_cfg[] = {
 	.yesno    = 1,
 	.desc     = "don't loop (for use with -t)",
     },{
-	.cmdline  = "comments",
-	.option   = { O_COMMENTS },
-	.yesno    = 1,
-	.desc     = "display image comments",
-    },{
 	.letter   = 'e',
 	.cmdline  = "edit",
 	.option   = { O_EDIT },

@@ -126,7 +126,6 @@ static float fbgamma = 1;
 /* Command line options. */
 int autodown;
 int autoup;
-int comments;
 int transparency = 40;
 int timeout;
 int backup;
@@ -371,39 +370,11 @@ shadow_draw_image(struct ida_image *img, int xoff, int yoff,
     }
 }
 
-static void status_prepare(void)
-{
-    struct ida_image *img = flist_img_get(fcurrent);
-    int y1 = fb_var.yres - (face->size->metrics.height >> 6);
-    int y2 = fb_var.yres - 1;
-
-    if (img) {
-	shadow_draw_image(img, fcurrent->left, fcurrent->top, y1, y2, 100);
-	shadow_darkify(0, fb_var.xres-1, y1, y2, transparency);
-    } else {
-	shadow_clear_lines(y1, y2);
-    }
-    shadow_draw_line(0, fb_var.xres-1, y1-1, y1-1);
-}
-
 static void log_error(unsigned char *msg)
 {
     // This message used to be drawn on the screen (status_error()).
     // Now we simply write the message to stderr.
     fwprintf(stderr, L"%s", msg);
-}
-
-static void status_edit(unsigned char *msg, int pos)
-{
-    int yt = fb_var.yres + (face->size->metrics.descender >> 6);
-    wchar_t str[128];
-
-    status_prepare();
-
-    swprintf(str,ARRAY_SIZE(str), L"%s", msg);
-    shadow_draw_string_cursor(face, 0, yt, str, pos);
-
-    shadow_render();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -821,10 +792,6 @@ svga_show(struct flist *f, struct flist *prev,
 		   0 == strcmp(key, "L")) {
 	    return KEY_ROT_CCW;
 	    
-	} else if (0 == strcmp(key, "t") ||
-		   0 == strcmp(key, "T")) {
-	    return KEY_DESC;
-
 	} else if (rc == 1 && (*key == 'g' || *key == 'G')) {
 	    return KEY_GOTO;
 	} else if (rc == 1 && (*key == 's' || *key == 'S')) {
@@ -870,47 +837,6 @@ static char *my_basename(char *filename)
     return filename;
 }
 
-static char *file_desktop(char *filename)
-{
-    static char desc[128];
-    char *h;
-
-    strncpy(desc,filename,sizeof(desc)-1);
-    if (NULL != (h = strrchr(filename,'/'))) {
-	snprintf(desc,sizeof(desc),"%.*s/%s", 
-		 (int)(h - filename), filename,
-		 ".directory");
-    } else {
-	strcpy(desc,".directory");
-    }
-    return desc;
-}
-
-static char *make_desc(struct ida_image_info *img, char *filename)
-{
-    static char linebuffer[128];
-    struct ida_extra *extra;
-    char *desc;
-    int len;
-
-    memset(linebuffer,0,sizeof(linebuffer));
-    strncpy(linebuffer,filename,sizeof(linebuffer)-1);
-
-    if (comments) {
-	extra = load_find_extra(img, EXTRA_COMMENT);
-	if (extra)
-	    snprintf(linebuffer,sizeof(linebuffer),"%.*s",
-		     extra->size,extra->data);
-    } else {
-	desc = file_desktop(filename);
-	len = desktop_read_entry(desc, "Comment=", linebuffer, sizeof(linebuffer));
-	if (0 != len)
-	    snprintf(linebuffer+len,sizeof(linebuffer)-len,
-		     " (%s)", my_basename(filename));
-    }
-    return linebuffer;
-}
-
 static char *make_info(struct ida_image *img, float scale)
 {
     static char linebuffer[128];
@@ -922,105 +848,6 @@ static char *make_info(struct ida_image *img, float scale)
 	     img->i.width, img->i.height,
 	     fcurrent->nr, fcount);
     return linebuffer;
-}
-
-static char edit_line(struct ida_image *img, char *line, int max)
-{
-    int      len = strlen(line);
-    int      pos = len;
-    int      rc;
-    char     key[11];
-    fd_set  set;
-
-    do {
-	status_edit(line,pos);
-	
-	FD_SET(0, &set);
-	rc = select(1, &set, NULL, NULL, NULL);
-        if (switch_last != fb_switch_state) {
-	    console_switch();
-	    continue;
-	}
-	rc = read(0, key, sizeof(key)-1);
-	if (rc < 1) {
-	    /* EOF */
-	    return KEY_EOF;
-	}
-	key[rc] = 0;
-
-	if (0 == strcmp(key,"\x0a")) {
-	    /* Enter */
-	    return 0;
-	    
-	} else if (0 == strcmp(key,"\x1b")) {
-	    /* ESC */
-	    return KEY_ESC;
-	    
-	} else if (0 == strcmp(key,"\x1b[C")) {
-	    /* cursor right */
-	    if (pos < len)
-		pos++;
-
-	} else if (0 == strcmp(key,"\x1b[D")) {
-	    /* cursor left */
-	    if (pos > 0)
-		pos--;
-
-	} else if (0 == strcmp(key,"\x1b[1~")) {
-	    /* home */
-	    pos = 0;
-	    
-	} else if (0 == strcmp(key,"\x1b[4~")) {
-	    /* end */
-	    pos = len;
-	    
-	} else if (0 == strcmp(key,"\x7f")) {
-	    /* backspace */
-	    if (pos > 0) {
-		memmove(line+pos-1,line+pos,len-pos+1);
-		pos--;
-		len--;
-	    }
-
-	} else if (0 == strcmp(key,"\x1b[3~")) {
-	    /* delete */
-	    if (pos < len) {
-		memmove(line+pos,line+pos+1,len-pos);
-		len--;
-	    }
-
-	} else if (1 == rc && isprint(key[0]) && len < max) {
-	    /* new key */
-	    if (pos < len)
-		memmove(line+pos+1,line+pos,len-pos+1);
-	    line[pos] = key[0];
-	    pos++;
-	    len++;
-	    line[len] = 0;
-
-	} else if (0 /* debug */) {
-	    debug_key(key);
-	    sleep(1);
-	}
-    } while (1);
-}
-
-static void edit_desc(struct ida_image *img, char *filename)
-{
-    static char linebuffer[128];
-    char *desc;
-    int len, rc;
-
-    desc = file_desktop(filename);
-    len = desktop_read_entry(desc, "Comment=", linebuffer, sizeof(linebuffer));
-    if (0 == len) {
-	linebuffer[0] = 0;
-	len = 0;
-    }
-    rc = edit_line(img, linebuffer, sizeof(linebuffer)-1);
-    if (0 != rc)
-	return;
-    desktop_write_entry(desc, "Directory", "Comment=", linebuffer);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1202,7 +1029,7 @@ main(int argc, char *argv[])
 {
     int              once;
     int              i, arg, key;
-    char             *info, *desc, *filelist;
+    char             *info, *filelist;
     char             linebuffer[128];
     struct flist     *fprev = NULL;
 
@@ -1286,18 +1113,16 @@ main(int argc, char *argv[])
     
     /* svga main loop */
     tty_raw();
-    desc = NULL;
     info = NULL;
     for (;;) {
 	flist_img_load(fcurrent, 0);
 	flist_img_release_memory();
 	img = flist_img_get(fcurrent);
 	if (img) {
-	    desc = make_desc(&fcurrent->fimg->i, fcurrent->name);
 	    info = make_info(fcurrent->fimg, fcurrent->scale);
 	}
 
-	key = svga_show(fcurrent, fprev, timeout, desc, info, &arg);
+	key = svga_show(fcurrent, fprev, timeout, NULL, info, &arg);
 	fprev = fcurrent;
 	switch (key) {
 	case KEY_DELETE:
@@ -1397,12 +1222,6 @@ main(int argc, char *argv[])
 	    break;
 	case KEY_DELAY:
 	    timeout = arg;
-	    break;
-	case KEY_DESC:
-	    if (!comments) {
-		edit_desc(img, fcurrent->name);
-		desc = make_desc(&fcurrent->fimg->i,fcurrent->name);
-	    }
 	    break;
 	}
     }
