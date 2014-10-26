@@ -992,7 +992,7 @@ static void cleanup_and_exit(int code)
 {
     shadow_fini();
     fb_clear_screen();
-    tty_restore();
+    //tty_restore();
     fb_cleanup();
     flist_print_tagged(stdout);
     exit(code);

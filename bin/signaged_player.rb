@@ -16,6 +16,10 @@ base_dir = File.expand_path(File.dirname(__FILE__))
 
 $content_dir = "#{base_dir}/../downloads"
 
+File.open("#{$content_dir}/signaged_player.pid", "wb") do |file|
+  file.write(Process.pid)
+end
+
 itineraries = Schedule.parse_itineraries(serialized_itineraries)
 
 ScheduleRun = Struct.new(:type, :items)
@@ -48,40 +52,30 @@ video_player_pid = -1
 image_player_pid = -1
 should_end = false
 
-term_signal_handler = proc {
+Signal.trap("TERM") do
+  puts "Terminating Player"
   should_end = true
-}
-
-Signal.trap("INT", term_signal_handler)
-Signal.trap("TERM", term_signal_handler)
-
-#system("/usr/bin/tvservice -p")
+end
 
 while !should_end
   command_seq.each do |it|
     case it.type
     when "video"
-      #params = it.items.map{|i| Shellwords.escape(i.file_path) }
-      #params.each do |p|
       it.items.each do |p|
         file_path = Shellwords.escape(p.file_path)
-        command = "omxplayer -o hdmi #{file_path} > /dev/null"
+        command = "omxplayer -o hdmi #{file_path} > /dev/null 2>&1"
         puts "#{$PROGRAM_NAME}: spawn: #{command}"
         video_player_pid = spawn(command)
         status = Process.waitpid2(video_player_pid)
         puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
       end
     when "article"
-      timeout = 5
-      # params = it.items.map{|i| Shellwords.escape(i.video_path) }
-      params = it.items.map{|i| Shellwords.escape(i.rendered_image_path) }
-      params.each do |p|
-        command = "fbi -T 2 -a -noverbose #{p} > /dev/null"
-        # command = "omxplayer -o hdmi #{p} > /dev/null"
-        #puts "#{$PROGRAM_NAME}: spawn: #{command}"
+      it.items.each do |article|
+        file_path = Shellwords.escape(article.rendered_image_path)
+        command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
         image_player_pid = spawn(command)
         puts "#{$PROGRAM_NAME}: spawn: #{command}"
-        sleep timeout
+        sleep article.article_duration
 	killall_pid = system("killall fbi")
         puts "#{$PROGRAM_NAME}: fbi probably killed"
       end

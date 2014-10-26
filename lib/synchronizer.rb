@@ -52,18 +52,17 @@ end
 
 # HTML articles can be downloaded
 class Article < Loadable
-  attr_reader :type, :url, :video_duration
+  attr_reader :type, :url, :article_duration
 
-  def initialize(url, video_duration = 12)
+  def initialize(url, article_duration = 15)
     @url = URI.parse(url)
     @type = "article"
-    @video_duration = video_duration
+    @article_duration = article_duration
   end
 
   def download
     super
     download_rendered_page
-    #make_video
   end
 
   def rendered_page_response
@@ -78,16 +77,6 @@ class Article < Loadable
 
   def video_path
     "#{file_path}.avi"
-  end
-
-  def make_video
-    unless File.exist?(video_path)
-      tmp_file = Tempfile.new([filename, '.avi'])
-      video_maker_command = "avconv -loop 1 -i #{rendered_image_path} -t #{video_duration} -y #{tmp_file.path}"
-      video_maker_pid = spawn(video_maker_command)
-      status = Process.waitpid2(video_maker_pid)
-      FileUtils.move("#{tmp_file.path}", video_path)
-    end
   end
 
   def download_rendered_page
