@@ -58,9 +58,9 @@ Signal.trap("TERM") do
 end
 
 if command_seq.empty?
-  %x("fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1")
+  %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
 else
-  %x("fbi -T 2 -reset")
+  %x(fbi -T 2 -reset)
 end
 
 while !should_end
