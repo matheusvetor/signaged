@@ -204,13 +204,10 @@ auth_alg=OPEN
     article_png_files = []
     article_files.each { |item| article_png_files << "#{item.filename}.png" }
 
-    keep_files = [article_png_files, article_files.map(&:filename), video_files.map(&:filename)]
+    delete_article_files =  Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f } - [article_png_files, article_files.map(&:filename)].flatten
+    delete_video_files =  Dir.entries("/home/pi/signaged/downloads/video").reject { |f| File.directory? f } - video_files.map(&:filename)
 
-    all_files = [
-      Dir.entries("/home/pi/signaged/downloads/video").reject { |f| File.directory? f },
-      Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f }
-    ].flatten
-
-    FileUtils.rm(all_files - keep_files)
+    FileUtils.cd('/home/pi/signaged/downloads/article').rm(delete_article_files)
+    FileUtils.cd('/home/pi/signaged/downloads/video').rm(delete_video_files)
   end
 end
