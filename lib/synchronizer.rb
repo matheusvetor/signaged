@@ -211,6 +211,6 @@ auth_alg=OPEN
       Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f }
     ].flatten
 
-    FileUtils.rm(all_Files - keep_files)
+    FileUtils.rm(all_files - keep_files)
   end
 end
