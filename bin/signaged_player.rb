@@ -57,12 +57,6 @@ Signal.trap("TERM") do
   should_end = true
 end
 
-if comand_seq.empty?
-  exec "fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1"
-else
-  exec "fbi -T 2 -reset"
-end
-
 while !should_end
   command_seq.each do |it|
     case it.type
