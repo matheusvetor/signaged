@@ -57,6 +57,8 @@ Signal.trap("TERM") do
   should_end = true
 end
 
+exec "fbi -T 2 -reset"
+
 while !should_end
   command_seq.each do |it|
     case it.type
@@ -76,7 +78,7 @@ while !should_end
         image_player_pid = spawn(command)
         puts "#{$PROGRAM_NAME}: spawn: #{command}"
         sleep article.article_duration
-	killall_pid = system("killall fbi")
+        killall_pid = system("killall fbi")
         puts "#{$PROGRAM_NAME}: fbi probably killed"
       end
     end
