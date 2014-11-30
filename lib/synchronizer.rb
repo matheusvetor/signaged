@@ -207,7 +207,12 @@ auth_alg=OPEN
     delete_article_files =  Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f } - [article_png_files, article_files.map(&:filename)].flatten
     delete_video_files =  Dir.entries("/home/pi/signaged/downloads/video").reject { |f| File.directory? f } - video_files.map(&:filename)
 
-    FileUtils.cd('/home/pi/signaged/downloads/article').rm(delete_article_files)
-    FileUtils.cd('/home/pi/signaged/downloads/video').rm(delete_video_files)
+    FileUtils.cd('/home/pi/signaged/downloads/article') do
+      FileUtils.rm(delete_article_files)
+    end
+
+    FileUtils.cd('/home/pi/signaged/downloads/video') do
+      FileUtils.rm(delete_video_files)
+    end
   end
 end
