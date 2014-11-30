@@ -193,7 +193,7 @@ auth_alg=OPEN
       item.download
       @itineraries << item
     end
-    cleanup_unused_files
+    # cleanup_unused_files
 
     return json
   end
