@@ -193,6 +193,24 @@ auth_alg=OPEN
       item.download
       @itineraries << item
     end
+    cleanup_unused_files
+
     return json
+  end
+
+  def cleanup_unused_files
+    video_files = @itineraries.select{ |item| item.class == "Video" }
+    article_files = @itineraries.select{ |item| item.class == "Article" }
+    article_png_files = []
+    article_files.each { |item| article_png_files << "#{item.filename}.png" }
+
+    keep_files = [article_png_files, article_files.map(&:filename), video_files.map(&:filename)]
+
+    all_files = [
+      Dir.entries("/home/pi/signaged/downloads/video").reject { |f| File.directory? f },
+      Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f }
+    ].flatten
+
+    FileUtils.rm(all_Files - keep_files)
   end
 end
