@@ -5,11 +5,12 @@ install-on-macosx:
 	sudo npm install temp phantom
 
 install-on-pi:
-	sudo apt-get install ruby ffmpeg
-	# sudo apt-get install ruby npm
+	sudo apt-get build-dep fbi
+	sudo apt-get install ffmpeg
 
 	# Extract nodejs for RaspberryPi
 	tar -zxf support/node-v0.10.28-linux-arm-pi.tar.gz
+
 	# Remove any old node version. Create the dir again
 	sudo rm -r -f /opt/node
 	sudo mkdir /opt/node
@@ -25,9 +26,11 @@ install-on-pi:
 	# wget https://github.com/aeberhardo/phantomjs-linux-armv6l/archive/master.zip
 	unzip support/phantomjs-pi-1.9.0.zip
 	tar xjf phantomjs-linux-armv6l-master/phantomjs-1.9.0-linux-armv6l.tar.bz2
+
 	# Remove any old node version. Create the dir again
 	sudo rm -r -f /opt/phantomjs
 	sudo mkdir /opt/phantomjs
+
 	# Copy the expanded files
 	sudo cp -r phantomjs-1.9.0-linux-armv6l/* /opt/phantomjs
 
@@ -38,11 +41,14 @@ install-on-pi:
 
 	# Get a newer npm
 	sudo npm update
+
 	# Install node modules
 	sudo npm install temp phantom
 
 	# Copy signaged to init.d
-	sudo cp signaged /etc/init.d
+	sudo rm -r -f /etc/init.d/signaged
+	sudo ln -s /home/pi/signaged/signaged /etc/init.d
+
 	# Add signaged to boot start
 	update-rc.d signaged start 30
 
