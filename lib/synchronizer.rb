@@ -153,7 +153,16 @@ class Synchronizer
   end
 
   def create_wifi_config(json)
-    wifi_config = <<-EOF
+
+    wifi_config0 = <<-EOF
+ctrl_interface=/var/run/wpa_supplicant
+network={
+  ssid="#{json['wifi_name']}"
+  key_mgmt=NONE
+}
+    EOF
+
+    wifi_config1 = <<-EOF
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 
@@ -174,6 +183,8 @@ pairwise=TKIP
 auth_alg=OPEN
 }
     EOF
+
+    wifi_config = json['wifi_password'].empty? ? wifi_config0  : wifi_config1
 
     File.open("/etc/wpa_supplicant/wpa_supplicant.conf", "wb") do |file|
       file.write(wifi_config)
