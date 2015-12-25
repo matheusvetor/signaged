@@ -10,11 +10,9 @@
 # Description: Start signaged at boot time
 ### END INIT INFO
 
-PATH=/usr/local/rvm/rubies/ruby-2.0.0-p247/bin:$PATH
-
+PATH=/usr/local/bin:$PATH
 
 signaged_home="/home/pi/signaged"
-#signaged_server="http://192.168.25.11:3000"
 signaged_server="http://admin.tvopen.com.br"
 # machine_serial="CD9AK29HYCGPAH09"
 machine_serial=$(grep -i serial /proc/cpuinfo | cut -d : -f2)
@@ -48,7 +46,7 @@ function start() {
         start_html2img
         sleep 15
         echo "Starting signaged ..."
-        # fbi -T 2 -reset
+        fbi -T 2 -reset
         fbi -T 2 -a -noverbose $signaged_home/assets/images/loading.png
         $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
     fi

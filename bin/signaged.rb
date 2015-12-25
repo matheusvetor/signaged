@@ -40,7 +40,10 @@ player_pid = -1
 
 while true
   synchronizer = Synchronizer.new(SERVER, SERIAL)
-  current_schedule = synchronizer.sync
+  current_schedule = synchronizer.get_local_json
+  unless current_schedule
+    current_schedule = synchronizer.sync
+  end
 
   if current_schedule['id'] != last_schedule_id
     player_pid = begin
@@ -63,10 +66,12 @@ while true
 
     # spawn the player
     serialized_itineraries = Shellwords.escape JSON.generate(current_schedule['itineraries'])
-    spawn("#{base_dir}/signaged_player.rb #{serialized_itineraries} > /dev/null")
+    spawn("#{base_dir}/signaged_player.rb #{serialized_itineraries}")
   end
 
   last_schedule_id = current_schedule['id']
+
+  current_schedule = synchronizer.sync
 
   sleep [current_schedule['check_after'] || 7200 , 43200].min
 end

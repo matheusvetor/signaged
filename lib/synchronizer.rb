@@ -141,14 +141,19 @@ class Synchronizer
 
       parsed_json
     rescue
-      begin
-        file = File.open("#{$content_dir}/#{@serial}.json")
-        parsed_json = JSON.parse file.read
-        file.close
-      rescue
-        raise "Can't download JSON itinerary no find the local file"
-      end
-      parsed_json
+      get_local_json(true)
+    end
+  end
+
+  def get_local_json(do_rescue = false)
+    return false unless do_rescue && File.exist?("#{$content_dir}/#{@serial}.json")
+
+    begin
+      file = File.open("#{$content_dir}/#{@serial}.json")
+      parsed_json = JSON.parse file.read
+      file.close
+    rescue
+      raise "Can't download JSON itinerary no find the local file"
     end
   end
 
