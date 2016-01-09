@@ -28,6 +28,11 @@ function running() {
     fi
 }
 
+function auth_unit() {
+    echo "Auth Unit"
+    /usr/lib/node_modules/casperjs/bin/casperjs "$signaged_home/autologin/app.js"
+}
+
 function start_html2img() {
     echo "Starting html2img server..."
     /usr/bin/node "$signaged_home/bin/html2img-server.js" "$signaged_home/downloads" &
@@ -43,6 +48,8 @@ function start() {
     then
         echo "signaged is already running"
     else
+	auth_unit
+        sleep 15
         start_html2img
         sleep 15
         echo "Starting signaged ..."

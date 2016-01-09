@@ -65,6 +65,9 @@ while true
     end
 
     # spawn the player
+    %x(/usr/lib/node_modules/casperjs/bin/casperjs /home/pi/autologin/app.js)                                        
+    sleep(120)
+
     serialized_itineraries = Shellwords.escape JSON.generate(current_schedule['itineraries'])
     spawn("#{base_dir}/signaged_player.rb #{serialized_itineraries}")
   end

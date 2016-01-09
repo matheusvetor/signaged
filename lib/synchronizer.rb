@@ -152,6 +152,7 @@ class Synchronizer
       file = File.open("#{$content_dir}/#{@serial}.json")
       parsed_json = JSON.parse file.read
       file.close
+      parsed_json
     rescue
       raise "Can't download JSON itinerary no find the local file"
     end
