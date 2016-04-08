@@ -5,6 +5,13 @@ install-on-macosx:
 	sudo npm install temp phantom
 
 install-on-pi:
+        wget https://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.0.tar.gz
+        tar -xzvf ruby-2.3.0.tar.gz
+        cd ruby-2.3.0/
+        ./configure
+        make
+        sudo make install
+
 	sudo apt-get build-dep fbi
 	sudo apt-get install ffmpeg
         sudo apt-get install --reinstall ttf-mscorefonts-installer
@@ -27,13 +34,13 @@ install-on-pi:
 	sudo mv support/phantomjs /usr/bin/phantomjs
 
 	# Fix node executable name
-	# sudo ln -s /usr/bin/nodejs /usr/bin/node
+	sudo ln -s /usr/bin/nodejs /usr/bin/node
 
 	# Get a newer npm
 	sudo npm update
 
 	# Install node modules
-	sudo npm install temp phantom
+	sudo npm install temp phantom@0.9.0
 
 	# Copy signaged to init.d
 	sudo rm -r -f /etc/init.d/signaged
