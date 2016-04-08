@@ -10,8 +10,6 @@
 # Description: Start signaged at boot time
 ### END INIT INFO
 
-PATH=/usr/local/bin:$PATH
-
 signaged_home="/home/pi/signaged"
 signaged_server="http://admin.tvopen.com.br"
 machine_serial=$(grep -i serial /proc/cpuinfo | cut -d : -f2)

@@ -5,12 +5,14 @@ install-on-macosx:
 	sudo npm install temp phantom
 
 install-on-pi:
+        # Install Ruby
         wget https://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.0.tar.gz
         tar -xzvf ruby-2.3.0.tar.gz
         cd ruby-2.3.0/
         ./configure
         make
         sudo make install
+	sudo ln -s /usr/local/bin/ruby /usr/bin/ruby
 
 	sudo apt-get build-dep fbi
 	sudo apt-get install ffmpeg
