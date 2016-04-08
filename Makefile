@@ -14,7 +14,8 @@ install-on-pi:
         sudo make install
 	sudo ln -s /usr/local/bin/ruby /usr/bin/ruby
 
-	sudo apt-get build-dep fbi
+        # Copy fbi
+	sudo cp support/fbi /usr/bin
 	sudo apt-get install ffmpeg
         sudo apt-get install --reinstall ttf-mscorefonts-installer
 
@@ -33,7 +34,7 @@ install-on-pi:
 	sudo ln -s -f /opt/node/bin/npm /usr/bin/npm
 
 	# Move phantomjs
-	sudo mv support/phantomjs /usr/bin/phantomjs
+	sudo cp support/phantomjs /usr/bin
 
 	# Fix node executable name
 	sudo ln -s /usr/bin/nodejs /usr/bin/node
