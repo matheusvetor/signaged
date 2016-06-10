@@ -5,56 +5,59 @@ install-on-macosx:
 	sudo npm install temp phantom
 
 install-on-pi:
-        # Install Ruby
-        wget https://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.0.tar.gz
-        tar -xzvf ruby-2.3.0.tar.gz
-        cd ruby-2.3.0/
-        ./configure
-        make
-        sudo make install
-	sudo ln -s /usr/local/bin/ruby /usr/bin/ruby
 
-        # Copy fbi
-	sudo cp support/fbi /usr/bin
-	sudo apt-get install ffmpeg
-        sudo apt-get install --reinstall ttf-mscorefonts-installer
+    # Install Ruby
+    wget https://cache.ruby-lang.org/pub/ruby/2.3/ruby-2.3.1.tar.gz
+    tar -xzvf ruby-2.3.1.tar.gz
+    cd ruby-2.3.1/
+    ./configure
+    make
+    sudo make install
 
-	# Extract nodejs for RaspberryPi
-	tar -zxf support/node-v0.10.28-linux-arm-pi.tar.gz
+    sudo apt-get build-dep fbi
+    sudo apt-get install imagemagick
+    sudo apt-get install ffmpeg
+    sudo apt-get install --reinstall ttf-mscorefonts-installer
 
-	# Remove any old node version. Create the dir again
-	sudo rm -r -f /opt/node
-	sudo mkdir /opt/node
+    # Copy fbi
+    sudo cp support/fbi /usr/bin
 
-	# Copy the expanded files
-	sudo cp -r node-v*arm-pi*/* /opt/node
+    # Extract nodejs for RaspberryPi
+    tar -zxf support/node-v0.10.28-linux-arm-pi.tar.gz
 
-	# Symlink node and npm to somewhere already in the path. Debate where...
-	sudo ln -s -f /opt/node/bin/node /usr/bin/node
-	sudo ln -s -f /opt/node/bin/npm /usr/bin/npm
+    # Remove any old node version. Create the dir again
+    sudo rm -r -f /opt/node
+    sudo mkdir /opt/node
 
-	# Move phantomjs
-	sudo cp support/phantomjs /usr/bin
+    # Copy the expanded files
+    sudo cp -r node-v*arm-pi*/* /opt/node
 
-	# Fix node executable name
-	sudo ln -s /usr/bin/nodejs /usr/bin/node
+    # Symlink node and npm to somewhere already in the path. Debate where...
+    sudo ln -s -f /opt/node/bin/node /usr/bin/node
+    sudo ln -s -f /opt/node/bin/npm /usr/bin/npm
 
-	# Get a newer npm
-	sudo npm update
+    # Move phantomjs
+    sudo cp support/phantomjs /usr/bin
 
-	# Install node modules
-	sudo npm install temp phantom@0.9.0
+    # Fix node executable name
+    sudo ln -s /usr/bin/nodejs /usr/bin/node
 
-	# Copy signaged to init.d
-	sudo rm -r -f /etc/init.d/signaged
-	sudo ln -s /home/pi/signaged/signaged /etc/init.d
+    # Get a newer npm
+    sudo npm update
 
-	# Add signaged to boot start
-	update-rc.d signaged start 30
+    # Install node modules
+    sudo npm install temp phantom@0.9.0
+
+    # Copy signaged to init.d
+    sudo rm -r -f /etc/init.d/signaged
+    sudo ln -s /home/pi/signaged/signaged /etc/init.d
+
+    # Add signaged to boot start
+    update-rc.d signaged start 30
 
 install: install-on-pi
-	mkdir -p downloads
-	mkdir -p downloads/article
-	mkdir -p downloads/video
+    mkdir -p downloads
+    mkdir -p downloads/article
+    mkdir -p downloads/video
 
 .PHONY: install install-on-macosx install-on-pi
