@@ -8,7 +8,7 @@ resdir	=  $(DESTDIR)$(RESDIR)
 
 # fixup flags
 CFLAGS	+= -DVERSION='"$(VERSION)"' -I$(srcdir)
-CFLAGS	+= -Wno-pointer-sign -g
+CFLAGS	+= -Wno-pointer-sign
 
 # default target
 all: build
@@ -28,6 +28,12 @@ endif
 
 include $(srcdir)/mk/Autoconf.mk
 
+ac_jpeg_ver = $(shell \
+	$(call ac_init,for libjpeg version);\
+	$(call ac_s_cmd,echo -e '\#include <jpeglib.h>\nJPEG_LIB_VERSION' \
+		| cpp | tail -n 1);\
+	$(call ac_fini))
+
 define make-config
 LIB		:= $(LIB)
 RESDIR		:= $(call ac_resdir)
@@ -40,13 +46,17 @@ HAVE_LIBPCD	:= $(call ac_lib,pcd_open,pcd)
 HAVE_LIBUNGIF	:= $(call ac_lib,DGifOpenFileName,ungif)
 HAVE_LIBPNG	:= $(call ac_lib,png_read_info,png,-lz)
 HAVE_LIBTIFF	:= $(call ac_lib,TIFFOpen,tiff)
+HAVE_LIBWEBP	:= $(call ac_lib,WebPDecodeRGBA,webp)
 #HAVE_LIBMAGICK	:= $(call ac_binary,Magick-config)
 HAVE_LIBSANE	:= $(call ac_lib,sane_init,sane)
-# Forcefully disable cURL
-HAVE_LIBCURL	:= no
+HAVE_LIBCURL	:= $(call ac_lib,curl_easy_init,curl)
 HAVE_LIBLIRC	:= $(call ac_lib,lirc_init,lirc_client)
 HAVE_MOTIF	:= $(call ac_lib,XmStringGenerate,Xm,-L/usr/X11R6/$(LIB) -lXpm -lXt -lXext -lX11)
+JPEG_VER        := $(call ac_jpeg_ver)
 endef
+
+# transposing
+CFLAGS  += -Ijpeg/$(JPEG_VER)
 
 # transparent http/ftp access using curl depends on fopencookie (glibc)
 ifneq ($(HAVE_GLIBC),yes)
@@ -59,15 +69,14 @@ ifeq ($(HAVE_LIBCURL),yes)
   ida fbi : LDFLAGS  += -Wl,--wrap=fopen
 endif
 
-ida fbi : LDFLAGS  += `dpkg-buildflags --get LDFLAGS`
 
 ########################################################################
 # conditional stuff
 
 includes        = ENDIAN_H STRCASESTR NEW_EXIF
-libraries       = PCD UNGIF PNG TIFF CURL SANE LIRC
-ida_libs	= PCD UNGIF PNG TIFF CURL SANE
-fbi_libs	= PCD UNGIF PNG TIFF CURL LIRC
+libraries       = PCD UNGIF PNG TIFF WEBP CURL SANE LIRC
+ida_libs	= PCD UNGIF PNG TIFF WEBP CURL SANE
+fbi_libs	= PCD UNGIF PNG TIFF WEBP CURL LIRC
 
 #MAGICK_CFLAGS	= $(shell Magick-config --cflags)
 #MAGICK_LDFLAGS	= $(shell Magick-config --ldflags)
@@ -76,6 +85,7 @@ fbi_libs	= PCD UNGIF PNG TIFF CURL LIRC
 
 PNG_LDLIBS	:= -lpng -lz
 TIFF_LDLIBS	:= -ltiff
+WEBP_LDLIBS	:= -lwebp
 PCD_LDLIBS	:= -lpcd
 UNGIF_LDLIBS	:= -lungif
 SANE_LDLIBS	:= -lsane
@@ -84,6 +94,7 @@ LIRC_LDLIBS     := -llirc_client
 
 PNG_OBJS	:= rd/read-png.o  wr/write-png.o
 TIFF_OBJS	:= rd/read-tiff.o wr/write-tiff.o
+WEBP_OBJS	:= rd/read-webp.o
 PCD_OBJS	:= rd/read-pcd.o
 UNGIF_OBJS	:= rd/read-gif.o
 SANE_OBJS	:= sane.o
@@ -112,7 +123,8 @@ fbi : LDLIBS += $(call ac_lib_mkvar,$(fbi_libs),LDLIBS)
 exiftran      : LDLIBS += -ljpeg -lexif -lm
 thumbnail.cgi : LDLIBS += -lexif -lm
 
-exiftran: exiftran.o genthumbnail.o jpegtools.o jpeg/transupp.o \
+exiftran: exiftran.o genthumbnail.o jpegtools.o \
+	jpeg/$(JPEG_VER)/transupp.o \
 	filter.o op.o readers.o rd/read-jpeg.o
 thumbnail.cgi: thumbnail.cgi.o
 
@@ -124,7 +136,7 @@ thumbnail.cgi: thumbnail.cgi.o
 OBJS_IDA := \
 	ida.o man.o hex.o x11.o viewer.o dither.o icons.o \
 	parseconfig.o idaconfig.o fileops.o desktop.o \
-	RegEdit.o selections.o xdnd.o jpeg/transupp.o \
+	RegEdit.o selections.o xdnd.o jpeg/$(JPEG_VER)/transupp.o \
 	filebutton.o filelist.o browser.o jpegtools.o \
 	op.o filter.o lut.o color.o \
 	rd/read-xwd.o rd/read-xpm.o 
@@ -161,7 +173,7 @@ ida.o: Ida.ad.h logo.h
 OBJS_FBI := \
 	fbi.o fbtools.o fb-gui.o desktop.o \
 	parseconfig.o fbiconfig.o \
-	jpegtools.o jpeg/transupp.o \
+	jpegtools.o jpeg/$(JPEG_VER)/transupp.o \
 	dither.o filter.o op.o
 
 OBJS_FBI += $(filter-out wr/%,$(call ac_lib_mkvar,$(fbi_libs),OBJS))
@@ -177,8 +189,12 @@ fbi: $(OBJS_FBI) $(OBJS_READER)
 ########################################################################
 # general rules
 
-.PHONY: build install clean distclean realclean
-build: $(TARGETS)
+.PHONY: check-libjpeg build install clean distclean realclean
+build: check-libjpeg $(TARGETS)
+
+check-libjpeg:
+	@test -d jpeg/$(JPEG_VER) || \
+		( echo "Need files from libjpeg $(JPEG_VER) in jpeg/"; false)
 
 install: build
 	$(INSTALL_DIR) $(bindir)
@@ -199,7 +215,7 @@ ifeq ($(HAVE_MOTIF),yes)
 endif
 
 clean:
-	-rm -f *.o jpeg/*.o rd/*.o wr/*.o $(depfiles) core core.*
+	-rm -f *.o jpeg/$(JPEG_VER)/*.o rd/*.o wr/*.o $(depfiles) core core.*
 
 realclean distclean: clean
 	-rm -f Make.config
@@ -215,6 +231,6 @@ include $(srcdir)/mk/Compile.mk
 
 include $(srcdir)/mk/Maintainer.mk
 
-sync::
-	cp $(srcdir)/../xawtv/common/parseconfig.[ch] $(srcdir)
-	cp $(srcdir)/../xawtv/console/fbtools.[ch] $(srcdir)
+#sync::
+#	cp $(srcdir)/../xawtv/common/parseconfig.[ch] $(srcdir)
+#	cp $(srcdir)/../xawtv/console/fbtools.[ch] $(srcdir)

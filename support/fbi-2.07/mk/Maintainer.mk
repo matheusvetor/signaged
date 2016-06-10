@@ -12,17 +12,19 @@ sync:: distclean
 	chmod 444 $(srcdir)/INSTALL $(srcdir)/mk/*.mk
 
 
-repository = $(shell cat CVS/Repository)
+repository := $(shell basename $(PWD))
 release-dir ?= $(HOME)/projects/Releases
-release-pub ?= goldbach@me.in-berlin.de:dl.bytesex.org/releases/$(repository)
-tarball = $(release-dir)/$(repository)-$(VERSION).tar.gz
+release-pub ?= bigendian.kraxel.org:/public/vhosts/www.kraxel.org/releases/$(repository)
+tarball = $(release-dir)/$(repository)-$(VERSION).tar
+
+$(tarball).gz:
+	git tag -m "release $(VERSION)" "$(VERSION)"
+	git push --tags
+	git archive --format=tar --prefix=$(repository)-$(VERSION)/ \
+		-o $(tarball) $(VERSION)
+	gzip $(tarball)
 
 .PHONY: release
-release:
-	cvs tag $(RELTAG)
-	cvs export -r $(RELTAG) -d "$(repository)-$(VERSION)" "$(repository)"
-	find "$(repository)-$(VERSION)" -name .cvsignore -exec rm -fv "{}" ";"
-	tar -c -z -f "$(tarball)" "$(repository)-$(VERSION)"
-	rm -rf "$(repository)-$(VERSION)"
-	scp $(tarball) $(release-pub)
-
+release: $(tarball).gz
+	gpg --detach-sign --armor $(tarball).gz
+	scp $(tarball).gz* $(release-pub)

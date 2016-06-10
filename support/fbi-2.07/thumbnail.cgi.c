@@ -34,7 +34,7 @@ static const char *description =
     "deliver thumbnails for any JPEG image below below your document root which\n"
     "it is allowed to open by unix file permissions.\n"
     "\n"
-    "(c) 2004 Gerd Hoffmann <kraxel@bytesex.org> [SUSE Labs]\n"
+    "(c) 2004 Gerd Hoffmann <gerd@kraxel.org> [SUSE Labs]\n"
     "\n";
 
 /* -------------------------------------------------------------------------- */
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     char *path_info;
     
     if (NULL == getenv("GATEWAY_INTERFACE")) {
-	fprintf(stderr, "%s", shellhelp);
+	fprintf(stderr,"%s", shellhelp);
 	fprintf(stderr,description,"$DOCUMENT_ROOT");
 	exit(1);
     }

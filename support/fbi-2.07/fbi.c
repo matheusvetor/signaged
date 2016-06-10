@@ -1,7 +1,7 @@
 /*
  * image viewer, for framebuffer devices
  *
- *   (c) 1998-2004 Gerd Hoffmann <kraxel@bytesex.org>
+ *   (c) 1998-2012 Gerd Hoffmann <gerd@kraxel.org>
  *
  */
 
@@ -27,6 +27,13 @@
 
 #include <jpeglib.h>
 
+#include <libexif/exif-data.h>
+
+#ifdef HAVE_LIBLIRC
+# include "lirc/lirc_client.h"
+# include "lirc.h"
+#endif
+
 #include "readers.h"
 #include "dither.h"
 #include "fbtools.h"
@@ -36,7 +43,7 @@
 #include "list.h"
 #include "fbiconfig.h"
 
-#include "jpeg/transupp.h"		/* Support routines for jpegtran */
+#include "transupp.h"		/* Support routines for jpegtran */
 #include "jpegtools.h"
 
 #define TRUE            1
@@ -57,6 +64,7 @@
 #define KEY_TAGFILE    -8
 #define KEY_PLUS       -9
 #define KEY_MINUS     -10
+#define KEY_VERBOSE   -11
 #define KEY_ASCALE    -12
 #define KEY_DESC      -13
 
@@ -69,6 +77,8 @@
 #define KEY_DELETE   -200
 #define KEY_ROT_CW   -201
 #define KEY_ROT_CCW  -202
+#define KEY_FLIP_V   -203
+#define KEY_FLIP_H   -204
 
 #define DEFAULT_DEVICE  "/dev/fb0"
 
@@ -82,7 +92,7 @@ int32_t         lut_red[256], lut_green[256], lut_blue[256];
 int             dither = FALSE, pcd_res = 3;
 int             v_steps = 50;
 int             h_steps = 50;
-int             textreading = 0, redraw = 0;
+int             textreading = 0, redraw = 0, statusline = 1;
 int             fitwidth;
 
 /* file list */
@@ -126,6 +136,7 @@ static float fbgamma = 1;
 /* Command line options. */
 int autodown;
 int autoup;
+int comments;
 int transparency = 40;
 int timeout;
 int backup;
@@ -135,6 +146,10 @@ int reset;
 int editable;
 int blend_msecs;
 int perfmon = 0;
+
+/* font handling */
+static char *fontname = NULL;
+static FT_Face face;
 
 /* ---------------------------------------------------------------------- */
 /* fwd declarations                                                       */
@@ -150,7 +165,7 @@ version(void)
 {
     fprintf(stderr,
 	    "fbi version " VERSION ", compiled on %s\n"
-	    "(c) 1999-2006 Gerd Hoffmann <kraxel@bytesex.org> [SUSE Labs]\n",
+	    "(c) 1998-2012 Gerd Hoffmann <gerd@kraxel.org> [SUSE Labs]\n",
 	    __DATE__ );
 }
 
@@ -164,8 +179,8 @@ usage(char *name)
     fprintf(stderr,
 	    "\n"
 	    "This program displays images using the Linux framebuffer device.\n"
-	    "Supported formats: PhotoCD, jpeg, ppm, gif, tiff, xwd, bmp, png.\n"
-	    "It tries to use ImageMagick's convert for unknown file formats.\n"
+	    "Supported formats: PhotoCD, jpeg, ppm, gif, tiff, xwd, bmp, png,\n"
+	    "webp. It tries to use ImageMagick's convert for unknown file formats.\n"
 	    "\n"
 	    "usage: %s [ options ] file1 file2 ... fileN\n"
 	    "\n",
@@ -179,7 +194,7 @@ usage(char *name)
 	    "Large images can be scrolled using the cursor keys.  Zoom in/out\n"
 	    "works with '+' and '-'.  Use ESC or 'q' to quit.  Space and PgDn\n"
 	    "show the next, PgUp shows the previous image. Jumping to a image\n"
-	    "works with <number>g.  Return acts like Space but additionally\n"
+	    "works with <i>g.  Return acts like Space but additionally prints\n"
 	    "prints the filename of the currently displayed image to stdout.\n"
 	    "\n");
 }
@@ -261,9 +276,6 @@ static struct flist* flist_last(void)
 
 static struct flist* flist_next(struct flist *f, int eof, int loop)
 {
-    // Felipe
-    eof = 1;
-
     if (flist_islast(f)) {
 	if (eof)
 	    return NULL;
@@ -367,11 +379,189 @@ shadow_draw_image(struct ida_image *img, int xoff, int yoff,
     }
 }
 
-static void log_error(unsigned char *msg)
+static void status_prepare(void)
 {
-    // This message used to be drawn on the screen (status_error()).
-    // Now we simply write the message to stderr.
-    fwprintf(stderr, L"%s", msg);
+    struct ida_image *img = flist_img_get(fcurrent);
+    int y1 = fb_var.yres - (face->size->metrics.height >> 6);
+    int y2 = fb_var.yres - 1;
+
+    if (img) {
+	shadow_draw_image(img, fcurrent->left, fcurrent->top, y1, y2, 100);
+	shadow_darkify(0, fb_var.xres-1, y1, y2, transparency);
+    } else {
+	shadow_clear_lines(y1, y2);
+    }
+    shadow_draw_line(0, fb_var.xres-1, y1-1, y1-1);
+}
+
+static void status_update(unsigned char *desc, char *info)
+{
+    int yt = fb_var.yres + (face->size->metrics.descender >> 6);
+    wchar_t str[128];
+    
+    if (!statusline)
+	return;
+    status_prepare();
+
+    swprintf(str,ARRAY_SIZE(str),L"%s",desc);
+    shadow_draw_string(face, 0, yt, str, -1);
+    if (info) {
+	swprintf(str,ARRAY_SIZE(str), L"[ %s ] H - Help", info);
+    } else {
+	swprintf(str,ARRAY_SIZE(str), L"| H - Help");
+    }
+    shadow_draw_string(face, fb_var.xres, yt, str, 1);
+
+    shadow_render();
+}
+
+static void status_error(unsigned char *msg)
+{
+    int yt = fb_var.yres + (face->size->metrics.descender >> 6);
+    wchar_t str[128];
+
+    status_prepare();
+
+    swprintf(str,ARRAY_SIZE(str), L"%s", msg);
+    shadow_draw_string(face, 0, yt, str, -1);
+
+    shadow_render();
+    sleep(2);
+}
+
+static void status_edit(unsigned char *msg, int pos)
+{
+    int yt = fb_var.yres + (face->size->metrics.descender >> 6);
+    wchar_t str[128];
+
+    status_prepare();
+
+    swprintf(str,ARRAY_SIZE(str), L"%s", msg);
+    shadow_draw_string_cursor(face, 0, yt, str, pos);
+
+    shadow_render();
+}
+
+static void show_exif(struct flist *f)
+{
+    static unsigned int tags[] = {
+	0x010f, // Manufacturer
+	0x0110, // Model
+
+	0x0112, // Orientation
+	0x0132, // Date and Time
+
+	0x01e3, // White Point
+	0x829a, // Exposure Time
+	0x829d, // FNumber
+	0x9206, // Subject Distance
+	0xa40c, // Subject Distance Range
+	0xa405, // Focal Length In 35mm Film
+	0x9209, // Flash
+
+	0xa002, // Pixel X Dimension
+	0xa003, // Pixel Y Dimension
+    };
+    ExifData   *ed;
+    ExifEntry  *ee;
+    unsigned int tag,l1,l2,len,count,i;
+    const char *title[ARRAY_SIZE(tags)];
+    char *value[ARRAY_SIZE(tags)];
+    wchar_t *linebuffer[ARRAY_SIZE(tags)];
+
+    if (!visible)
+	return;
+
+    ed = exif_data_new_from_file(f->name);
+    if (NULL == ed) {
+	status_error("image has no EXIF data");
+	return;
+    }
+
+    /* pass one -- get data + calc size */
+    l1 = 0;
+    l2 = 0;
+    for (tag = 0; tag < ARRAY_SIZE(tags); tag++) {
+	ee = exif_content_get_entry (ed->ifd[EXIF_IFD_0], tags[tag]);
+	if (NULL == ee)
+	    ee = exif_content_get_entry (ed->ifd[EXIF_IFD_EXIF], tags[tag]);
+	if (NULL == ee) {
+	    title[tag] = NULL;
+	    value[tag] = NULL;
+	    continue;
+	}
+	title[tag] = exif_tag_get_title(tags[tag]);
+#ifdef HAVE_NEW_EXIF
+	value[tag] = malloc(128);
+	exif_entry_get_value(ee, value[tag], 128);
+#else
+	value[tag] = strdup(exif_entry_get_value(ee));
+#endif
+	len = strlen(title[tag]);
+	if (l1 < len)
+	    l1 = len;
+	len = strlen(value[tag]);
+	if (l2 < len)
+	    l2 = len;
+    }
+
+    /* pass two -- print stuff */
+    count = 0;
+    for (tag = 0; tag < ARRAY_SIZE(tags); tag++) {
+	if (NULL == title[tag])
+	    continue;
+	linebuffer[count] = malloc(sizeof(wchar_t)*(l1+l2+8));
+	swprintf(linebuffer[count], l1+l2+8,
+		 L"%-*.*s : %-*.*s",
+		 l1, l1, title[tag],
+		 l2, l2, value[tag]);
+	count++;
+    }
+    shadow_draw_text_box(face, 24, 16, transparency,
+			 linebuffer, count);
+    shadow_render();
+
+    /* pass three -- free data */
+    for (tag = 0; tag < ARRAY_SIZE(tags); tag++)
+	if (NULL != value[tag])
+	    free(value[tag]);
+    exif_data_unref (ed);
+    for (i = 0; i < count; i++)
+	free(linebuffer[i]);
+}
+
+static void show_help(void)
+{
+    static wchar_t *help[] = {
+	L"keyboard commands",
+	L"~~~~~~~~~~~~~~~~~",
+	L"  cursor keys    - scroll image",
+	L"  PgUp, k        - previous image",
+	L"  PgDn, SPACE, j - next image",
+	L"  <i>g           - jump to image #i",
+	L"",
+	L"  a              - autozoom image",
+	L"  +/-            - zoom in/out",
+	L"  <i>s           - set zoom to <i>%",
+	L"",
+	L"  ESC, q         - quit",
+	L"  v              - toggle statusline",
+	L"  h              - show this help text",
+	L"  i              - show EXIF info",
+	L"  p              - pause slideshow",
+	L"",
+	L"available if started with --edit switch,",
+	L"rotation works for jpeg images only:",
+	L"  D, Shift+d     - delete image",
+	L"  r              - rotate 90 degrees clockwise",
+	L"  l              - rotate 90 degrees counter-clockwise",
+	L"  x              - mirror image vertically (top / bottom)",
+	L"  y              - mirror image horizontally (left to right)",
+    };
+
+    shadow_draw_text_box(face, 24, 16, transparency,
+			 help, ARRAY_SIZE(help));
+    shadow_render();
 }
 
 /* ---------------------------------------------------------------------- */
@@ -414,6 +604,7 @@ static void debug_key(char *key)
 			"%s%c",
 			key[i] < 0x20 ? "^" : "",
 			key[i] < 0x20 ? key[i] + 0x40 : key[i]);
+    status_update(linebuffer, NULL);
 }
 
 static void
@@ -489,8 +680,7 @@ read_image(char *filename)
 
 	if (0 != pipe(p))
 	    return NULL;
-        int pid = fork();
-	switch (pid) {
+	switch (fork()) {
 	case -1: /* error */
 	    perror("fork");
 	    close(p[0]);
@@ -605,6 +795,7 @@ static void effect_blend(struct flist *f, struct flist *t)
 	if (perfmon) {
 	    pos += snprintf(linebuffer+pos, sizeof(linebuffer)-pos,
 			    " %d%%", weight);
+	    status_update(linebuffer, NULL);
 	    count++;
 	}
 
@@ -618,6 +809,7 @@ static void effect_blend(struct flist *f, struct flist *t)
 	pos += snprintf(linebuffer+pos, sizeof(linebuffer)-pos,
 			" | %d/%d -> %d msec",
 			msecs, count, msecs/count);
+	status_update(linebuffer, NULL);
 	shadow_render();
 	sleep(2);
     }
@@ -625,11 +817,12 @@ static void effect_blend(struct flist *f, struct flist *t)
 
 static int
 svga_show(struct flist *f, struct flist *prev,
-	  int timeout, int *nr)
+	  int timeout, char *desc, char *info, int *nr)
 {
     static int        paused = 0, skip = KEY_SPACE;
 
     struct ida_image  *img = flist_img_get(f);
+    int               exif = 0, help = 0;
     int               rc;
     char              key[11];
     fd_set            set;
@@ -668,12 +861,14 @@ svga_show(struct flist *f, struct flist *prev,
 	    } else {
 		shadow_draw_image(img, f->left, f->top, 0, fb_var.yres-1, 100);
 	    }
+	    status_update(desc, info);
 	    shadow_render();
 
 	    if (read_ahead) {
 		struct flist *f = flist_next(fcurrent,1,0);
 		if (f && !f->fimg)
 		    flist_img_load(f,1);
+		status_update(desc, info);
 		shadow_render();
 	    }
 	}
@@ -684,6 +879,12 @@ svga_show(struct flist *f, struct flist *prev,
 	FD_ZERO(&set);
 	FD_SET(0, &set);
 	fdmax = 1;
+#ifdef HAVE_LIBLIRC
+	if (-1 != lirc) {
+	    FD_SET(lirc,&set);
+	    fdmax = lirc+1;
+	}
+#endif
 	limit.tv_sec = timeout;
 	limit.tv_usec = 0;
 	rc = select(fdmax, &set, NULL, NULL,
@@ -704,6 +905,17 @@ svga_show(struct flist *f, struct flist *prev,
 	    }
 	    key[rc] = 0;
 	}
+#ifdef HAVE_LIBLIRC
+	if (lirc != -1 && FD_ISSET(lirc,&set)) {
+	    /* lirc input */
+	    if (-1 == lirc_fbi_havedata(&rc,key)) {
+		fprintf(stderr,"lirc: connection lost\n");
+		close(lirc);
+		lirc = -1;
+	    }
+	    key[rc] = 0;
+        }
+#endif
 
 	if (rc == 1 && (*key == 'q'    || *key == 'Q' ||
 			*key == 'e'    || *key == 'E' ||
@@ -743,8 +955,8 @@ svga_show(struct flist *f, struct flist *prev,
 	    f->left += h_steps;
 
 	} else if (0 == strcmp(key, "\x1b[5~") ||
-		   0 == strcmp(key, "j")       ||
-		   0 == strcmp(key, "J")) {
+		   0 == strcmp(key, "k")       ||
+		   0 == strcmp(key, "K")) {
 	    if (textreading && f->top > 0) {
 		redraw = 1;
 		f->top -= f->text_steps;
@@ -754,8 +966,8 @@ svga_show(struct flist *f, struct flist *prev,
 	    }
 
 	} else if (0 == strcmp(key, "\x1b[6~") ||
-		   0 == strcmp(key, "k")       ||
-		   0 == strcmp(key, "K")       ||
+		   0 == strcmp(key, "j")       ||
+		   0 == strcmp(key, "J")       ||
 		   0 == strcmp(key, "n")       ||
 		   0 == strcmp(key, "N")) {
 	    if (textreading && f->top < (int)(img->i.height - fb_var.yres)) {
@@ -778,6 +990,7 @@ svga_show(struct flist *f, struct flist *prev,
 		   0 == strcmp(key, "P")) {
 	    if (0 != timeout) {
 		paused = !paused;
+		status_update(paused ? "pause on " : "pause off", NULL);
 	    }
 
 	} else if (0 == strcmp(key, "D")) {
@@ -788,7 +1001,43 @@ svga_show(struct flist *f, struct flist *prev,
 	} else if (0 == strcmp(key, "l") ||
 		   0 == strcmp(key, "L")) {
 	    return KEY_ROT_CCW;
-	    
+	} else if (0 == strcmp(key, "x") ||
+		   0 == strcmp(key, "X")) {
+	    return KEY_FLIP_V;
+	} else if (0 == strcmp(key, "y") ||
+		   0 == strcmp(key, "Y")) {
+	    return KEY_FLIP_H;
+
+	} else if (0 == strcmp(key, "h") ||
+		   0 == strcmp(key, "H")) {
+	    if (!help) {
+		show_help();
+		help = 1;
+	    } else {
+		redraw = 1;
+		help = 0;
+	    }
+	    exif = 0;
+
+	} else if (0 == strcmp(key, "i") ||
+		   0 == strcmp(key, "I")) {
+	    if (!exif) {
+		show_exif(fcurrent);
+		exif = 1;
+	    } else {
+		redraw = 1;
+		exif = 0;
+	    }
+	    help = 0;
+
+	} else if (0 == strcmp(key, "v") ||
+		   0 == strcmp(key, "V")) {
+	    return KEY_VERBOSE;
+
+	} else if (0 == strcmp(key, "t") ||
+		   0 == strcmp(key, "T")) {
+	    return KEY_DESC;
+
 	} else if (rc == 1 && (*key == 'g' || *key == 'G')) {
 	    return KEY_GOTO;
 	} else if (rc == 1 && (*key == 's' || *key == 'S')) {
@@ -798,6 +1047,7 @@ svga_show(struct flist *f, struct flist *prev,
 	} else if (rc == 1 && *key >= '0' && *key <= '9') {
 	    *nr = *nr * 10 + (*key - '0');
 	    snprintf(linebuffer, sizeof(linebuffer), "> %d",*nr);
+	    status_update(linebuffer, NULL);
 	} else {
 	    *nr = 0;
 #if 0
@@ -832,6 +1082,159 @@ static char *my_basename(char *filename)
     if (h)
 	return h+1;
     return filename;
+}
+
+static char *file_desktop(char *filename)
+{
+    static char desc[128];
+    char *h;
+
+    strncpy(desc,filename,sizeof(desc)-1);
+    if (NULL != (h = strrchr(filename,'/'))) {
+	snprintf(desc,sizeof(desc),"%.*s/%s", 
+		 (int)(h - filename), filename,
+		 ".directory");
+    } else {
+	strcpy(desc,".directory");
+    }
+    return desc;
+}
+
+static char *make_desc(struct ida_image_info *img, char *filename)
+{
+    static char linebuffer[128];
+    struct ida_extra *extra;
+    char *desc;
+    int len;
+
+    memset(linebuffer,0,sizeof(linebuffer));
+    strncpy(linebuffer,filename,sizeof(linebuffer)-1);
+
+    if (comments) {
+	extra = load_find_extra(img, EXTRA_COMMENT);
+	if (extra)
+	    snprintf(linebuffer,sizeof(linebuffer),"%.*s",
+		     extra->size,extra->data);
+    } else {
+	desc = file_desktop(filename);
+	len = desktop_read_entry(desc, "Comment=", linebuffer, sizeof(linebuffer));
+	if (0 != len)
+	    snprintf(linebuffer+len,sizeof(linebuffer)-len,
+		     " (%s)", my_basename(filename));
+    }
+    return linebuffer;
+}
+
+static char *make_info(struct ida_image *img, float scale)
+{
+    static char linebuffer[128];
+    
+    snprintf(linebuffer, sizeof(linebuffer),
+	     "%s%.0f%% %dx%d %d/%d",
+	     fcurrent->tag ? "* " : "",
+	     scale*100,
+	     img->i.width, img->i.height,
+	     fcurrent->nr, fcount);
+    return linebuffer;
+}
+
+static char edit_line(struct ida_image *img, char *line, int max)
+{
+    int      len = strlen(line);
+    int      pos = len;
+    int      rc;
+    char     key[11];
+    fd_set  set;
+
+    do {
+	status_edit(line,pos);
+	
+	FD_SET(0, &set);
+	rc = select(1, &set, NULL, NULL, NULL);
+        if (switch_last != fb_switch_state) {
+	    console_switch();
+	    continue;
+	}
+	rc = read(0, key, sizeof(key)-1);
+	if (rc < 1) {
+	    /* EOF */
+	    return KEY_EOF;
+	}
+	key[rc] = 0;
+
+	if (0 == strcmp(key,"\x0a")) {
+	    /* Enter */
+	    return 0;
+	    
+	} else if (0 == strcmp(key,"\x1b")) {
+	    /* ESC */
+	    return KEY_ESC;
+	    
+	} else if (0 == strcmp(key,"\x1b[C")) {
+	    /* cursor right */
+	    if (pos < len)
+		pos++;
+
+	} else if (0 == strcmp(key,"\x1b[D")) {
+	    /* cursor left */
+	    if (pos > 0)
+		pos--;
+
+	} else if (0 == strcmp(key,"\x1b[1~")) {
+	    /* home */
+	    pos = 0;
+	    
+	} else if (0 == strcmp(key,"\x1b[4~")) {
+	    /* end */
+	    pos = len;
+	    
+	} else if (0 == strcmp(key,"\x7f")) {
+	    /* backspace */
+	    if (pos > 0) {
+		memmove(line+pos-1,line+pos,len-pos+1);
+		pos--;
+		len--;
+	    }
+
+	} else if (0 == strcmp(key,"\x1b[3~")) {
+	    /* delete */
+	    if (pos < len) {
+		memmove(line+pos,line+pos+1,len-pos);
+		len--;
+	    }
+
+	} else if (1 == rc && isprint(key[0]) && len < max) {
+	    /* new key */
+	    if (pos < len)
+		memmove(line+pos+1,line+pos,len-pos+1);
+	    line[pos] = key[0];
+	    pos++;
+	    len++;
+	    line[len] = 0;
+
+	} else if (0 /* debug */) {
+	    debug_key(key);
+	    sleep(1);
+	}
+    } while (1);
+}
+
+static void edit_desc(struct ida_image *img, char *filename)
+{
+    static char linebuffer[128];
+    char *desc;
+    int len, rc;
+
+    desc = file_desktop(filename);
+    len = desktop_read_entry(desc, "Comment=", linebuffer, sizeof(linebuffer));
+    if (0 == len) {
+	linebuffer[0] = 0;
+	len = 0;
+    }
+    rc = edit_line(img, linebuffer, sizeof(linebuffer)-1);
+    if (0 != rc)
+	return;
+    desktop_write_entry(desc, "Directory", "Comment=", linebuffer);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -896,7 +1299,7 @@ static void *flist_malloc(size_t size)
 	if (ptr)
 	    return ptr;
 	if (0 != flist_img_free_lru()) {
-	    log_error("Oops: out of memory, exiting");
+	    status_error("Oops: out of memory, exiting");
 	    exit(1);
 	}
     }
@@ -920,12 +1323,13 @@ static void flist_img_scale(struct flist *f, float scale, int prefetch)
 	    snprintf(linebuffer, sizeof(linebuffer),
 		     "scaling (%.0f%%) %s ...",
 		     scale*100, f->name);
+	    status_update(linebuffer, NULL);
 	}
 	f->simg = scale_image(f->fimg,scale);
 	if (!f->simg) {
 	    snprintf(linebuffer,sizeof(linebuffer),
 		     "%s: scaling FAILED",f->name);
-	    log_error(linebuffer);
+	    status_error(linebuffer);
 	}
     }
     f->scale = scale;
@@ -945,11 +1349,12 @@ static void flist_img_load(struct flist *f, int prefetch)
 
     snprintf(linebuffer,sizeof(linebuffer),"%s %s ...",
 	     prefetch ? "prefetch" : "loading", f->name);
+    status_update(linebuffer, NULL);
     f->fimg = read_image(f->name);
     if (!f->fimg) {
 	snprintf(linebuffer,sizeof(linebuffer),
 		 "%s: loading FAILED",f->name);
-	log_error(linebuffer);
+	status_error(linebuffer);
 	return;
     }
 
@@ -1003,17 +1408,21 @@ main(int argc, char *argv[])
 {
     int              once;
     int              i, arg, key;
-    char             *filelist;
+    char             *info, *desc, *filelist;
     char             linebuffer[128];
     struct flist     *fprev = NULL;
 
 #if 0
     /* debug aid, to attach gdb ... */ 
-    fprintf(stdout,"pid %d\n",getpid());
+    fprintf(stderr,"pid %d\n",getpid());
     sleep(10);
 #endif
 
     setlocale(LC_ALL,"");
+#ifdef HAVE_LIBLIRC
+    lirc = lirc_fbi_init();
+#endif
+    fbi_read_config();
     cfg_parse_cmdline(&argc,argv,fbi_cmd);
     cfg_parse_cmdline(&argc,argv,fbi_cfg);
 
@@ -1031,11 +1440,14 @@ main(int argc, char *argv[])
 	exit(0);
     }
        
+    if (GET_WRITECONF())
+	fbi_write_config();
 
     once        = GET_ONCE();
     autoup      = GET_AUTO_UP();
     autodown    = GET_AUTO_DOWN();
     fitwidth    = GET_FIT_WIDTH();
+    statusline  = GET_VERBOSE();
     textreading = GET_TEXT_MODE();
     editable    = GET_EDIT();
     backup      = GET_BACKUP();
@@ -1052,6 +1464,7 @@ main(int argc, char *argv[])
 
     fbgamma     = GET_GAMMA();
 
+    fontname    = cfg_get_str(O_FONT);
     filelist    = cfg_get_str(O_FILE_LIST);
     
     if (filelist)
@@ -1069,6 +1482,14 @@ main(int argc, char *argv[])
 	flist_randomize();
     fcurrent = flist_first();
 
+    font_init();
+    if (NULL == fontname)
+	fontname = "monospace:size=16";
+    face = font_open(fontname);
+    if (NULL == face) {
+	fprintf(stderr,"can't open font: %s\n",fontname);
+	exit(1);
+    }
     fd = fb_init(cfg_get_str(O_DEVICE),
 		 cfg_get_str(O_VIDEO_MODE),
 		 GET_VT());
@@ -1081,16 +1502,22 @@ main(int argc, char *argv[])
     fb_switch_init();
     shadow_init();
     shadow_set_palette(fd);
-    signal(SIGTSTP, SIG_IGN);
+    signal(SIGTSTP,SIG_IGN);
     
     /* svga main loop */
     tty_raw();
+    desc = NULL;
+    info = NULL;
     for (;;) {
 	flist_img_load(fcurrent, 0);
 	flist_img_release_memory();
 	img = flist_img_get(fcurrent);
+	if (img) {
+	    desc = make_desc(&fcurrent->fimg->i, fcurrent->name);
+	    info = make_info(fcurrent->fimg, fcurrent->scale);
+	}
 
-	key = svga_show(fcurrent, fprev, timeout, &arg);
+	key = svga_show(fcurrent, fprev, timeout, desc, info, &arg);
 	fprev = fcurrent;
 	switch (key) {
 	case KEY_DELETE:
@@ -1109,7 +1536,7 @@ main(int argc, char *argv[])
 		    cleanup_and_exit(0);
 		}
 	    } else {
-		log_error("readonly mode, sorry [start with --edit?]");
+		status_error("readonly mode, sorry [start with --edit?]");
 	    }
 	    break;
 	case KEY_ROT_CW:
@@ -1118,6 +1545,7 @@ main(int argc, char *argv[])
 	    if (editable) {
 		snprintf(linebuffer,sizeof(linebuffer),
 			 "rotating %s ...",fcurrent->name);
+		status_update(linebuffer, NULL);
 		jpeg_transform_inplace
 		    (fcurrent->name,
 		     (key == KEY_ROT_CW) ? JXFORM_ROT_90 : JXFORM_ROT_270,
@@ -1130,7 +1558,30 @@ main(int argc, char *argv[])
 		     JFLAG_UPDATE_ORIENTATION);
 		flist_img_free(fcurrent);
 	    } else {
-		log_error("readonly mode, sorry [start with --edit?]");
+		status_error("readonly mode, sorry [start with --edit?]");
+	    }
+	    break;
+	}
+	case KEY_FLIP_V:
+	case KEY_FLIP_H:
+	{
+	    if (editable) {
+		snprintf(linebuffer,sizeof(linebuffer),
+			 "mirroring %s ...",fcurrent->name);
+		status_update(linebuffer, NULL);
+		jpeg_transform_inplace
+		    (fcurrent->name,
+		     (key == KEY_FLIP_V) ? JXFORM_FLIP_V : JXFORM_FLIP_H,
+		     NULL,
+		     NULL,0,
+		     (backup   ? JFLAG_FILE_BACKUP    : 0) | 
+		     (preserve ? JFLAG_FILE_KEEP_TIME : 0) | 
+		     JFLAG_TRANSFORM_IMAGE     |
+		     JFLAG_TRANSFORM_THUMBNAIL |
+		     JFLAG_UPDATE_ORIENTATION);
+		flist_img_free(fcurrent);
+	    } else {
+		status_error("readonly mode, sorry [start with --edit?]");
 	    }
 	    break;
 	}
@@ -1190,6 +1641,22 @@ main(int argc, char *argv[])
 	    break;
 	case KEY_DELAY:
 	    timeout = arg;
+	    break;
+	case KEY_VERBOSE:
+#if 0 /* fbdev testing/debugging hack */
+	    {
+		ioctl(fd,FBIOBLANK,1);
+		sleep(1);
+		ioctl(fd,FBIOBLANK,0);
+	    }
+#endif
+	    statusline = !statusline;
+	    break;
+	case KEY_DESC:
+	    if (!comments) {
+		edit_desc(img, fcurrent->name);
+		desc = make_desc(&fcurrent->fimg->i,fcurrent->name);
+	    }
 	    break;
 	}
     }

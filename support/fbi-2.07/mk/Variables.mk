@@ -4,7 +4,7 @@
 # directories
 DESTDIR	=
 srcdir	?= .
-prefix	?= /usr
+prefix	?= /usr/local
 bindir	=  $(DESTDIR)$(prefix)/bin
 sbindir	=  $(DESTDIR)$(prefix)/sbin
 libdir  =  $(DESTDIR)$(prefix)/$(LIB)
@@ -30,18 +30,17 @@ MOC             ?= $(if $(QTDIR),$(QTDIR)/bin/moc,moc)
 
 STRIP		?= -s
 INSTALL		?= install
-INSTALL_BINARY  := $(INSTALL)
+INSTALL_BINARY  := $(INSTALL) $(STRIP)
 INSTALL_SCRIPT  := $(INSTALL)
 INSTALL_DATA	:= $(INSTALL) -m 644
 INSTALL_DIR	:= $(INSTALL) -d
 
 # cflags
-CFLAGS  	?= $(shell dpkg-buildflags --get CFLAGS) -O2
+CFLAGS		?= -g -O2
 CXXFLAGS	?= $(CFLAGS)
 CFLAGS		+= -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -Wpointer-arith -Wunused
 CXXFLAGS	+= -Wall -Wpointer-arith -Wunused
-CFLAGS 	+= $(shell dpkg-buildflags --get CPPFLAGS)
 
 # add /usr/local to the search path if something is in there ...
 ifneq ($(wildcard /usr/local/include/*.h),)
@@ -49,16 +48,8 @@ ifneq ($(wildcard /usr/local/include/*.h),)
   LDFLAGS += -L/usr/local/$(LIB)
 endif
 
-LDFLAGS 	?= $(shell dpkg-buildflags --get LDFLAGS)
-
 # fixup include path for $(srcdir) != "."
 ifneq ($(srcdir),.)
   CFLAGS  += -I. -I$(srcdir)
 endif
-
-
-
-
-
-
 

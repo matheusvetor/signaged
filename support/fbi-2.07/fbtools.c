@@ -156,7 +156,17 @@ fb_switch_init()
 void
 fb_memset (void *addr, int c, size_t len)
 {
+#if 1 /* defined(__powerpc__) */
+    unsigned int i, *p;
+    
+    i = (c & 0xff) << 8;
+    i |= i << 16;
+    len >>= 2;
+    for (p = addr; len--; p++)
+	*p = i;
+#else
     memset(addr, c, len);
+#endif
 }
 
 static int
@@ -450,8 +460,7 @@ void
 fb_cleanup(void)
 {
     /* restore console */
-    // don't restore to kd_mode. Set graphics mode instead
-    if (-1 == ioctl(tty,KDSETMODE, KD_GRAPHICS))
+    if (-1 == ioctl(tty,KDSETMODE, kd_mode))
 	perror("ioctl KDSETMODE");
     if (-1 == ioctl(fb,FBIOPUT_VSCREENINFO,&fb_ovar))
 	perror("ioctl FBIOPUT_VSCREENINFO");
@@ -508,7 +517,6 @@ fb_catch_exit_signals(void)
     if (0 == (termsig = sigsetjmp(fb_fatal_cleanup,0)))
 	return;
 
-    fb_clear_screen();
     /* cleanup */
     fb_cleanup();
     fprintf(stderr,"Oops: %s\n",sys_siglist[termsig]);

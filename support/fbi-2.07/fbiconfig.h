@@ -14,6 +14,7 @@
 #define O_AUTO_DOWN		O_OPTIONS, "auto-down"
 #define O_FIT_WIDTH		O_OPTIONS, "fit-width"
 #define O_QUIET		        O_OPTIONS, "quiet"
+#define O_VERBOSE		O_OPTIONS, "verbose"
 #define O_RANDOM		O_OPTIONS, "random"
 #define O_ONCE		        O_OPTIONS, "once"
 #define O_COMMENTS		O_OPTIONS, "comments"
@@ -33,6 +34,7 @@
 #define O_GAMMA		        O_OPTIONS, "gamma"
 
 #define O_DEVICE                O_OPTIONS, "device"
+#define O_FONT                  O_OPTIONS, "font"
 #define O_VIDEO_MODE            O_OPTIONS, "video-mode"
 
 #define O_TVOPEN                O_OPTIONS, "tvopen"
@@ -47,6 +49,7 @@
 #define GET_AUTO_DOWN()		cfg_get_bool(O_AUTO_DOWN,     0)
 #define GET_FIT_WIDTH()		cfg_get_bool(O_FIT_WIDTH,     0)
 #define GET_QUIET()		cfg_get_bool(O_QUIET,         0)
+#define GET_VERBOSE()		cfg_get_bool(O_VERBOSE,       1)
 #define GET_RANDOM()		cfg_get_bool(O_RANDOM,        0)
 #define GET_ONCE()		cfg_get_bool(O_ONCE,          0)
 #define GET_COMMENTS()		cfg_get_bool(O_COMMENTS,      0)

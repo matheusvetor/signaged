@@ -36,7 +36,7 @@ png_init(FILE *fp, char *filename, unsigned int page,
 	.gray  = 192,
     };
     int unit;
-    
+
     h = malloc(sizeof(*h));
     memset(h,0,sizeof(*h));
 
@@ -62,18 +62,14 @@ png_init(FILE *fp, char *filename, unsigned int page,
     if (debug)
 	fprintf(stderr,"png: color_type=%s #1\n",ct[h->color_type]);
     i->npages = 1;
-    
+
     png_set_packing(h->png);
     if (bit_depth == 16)
 	png_set_strip_16(h->png);
     if (h->color_type == PNG_COLOR_TYPE_PALETTE)
 	png_set_palette_to_rgb(h->png);
     if (h->color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-#if PNG_LIBPNG_VER_MAJOR >= 1 && PNG_LIBPNG_VER_MINOR >= 4
-        png_set_expand_gray_1_2_4_to_8(h->png);
-#else
-	png_set_gray_1_2_4_to_8(h->png);
-#endif
+	png_set_expand_gray_1_2_4_to_8(h->png);
 
     if (png_get_bKGD(h->png, h->info, &file_bg)) {
 	png_set_background(h->png,file_bg,PNG_BACKGROUND_GAMMA_FILE,1,1.0);
@@ -87,9 +83,9 @@ png_init(FILE *fp, char *filename, unsigned int page,
     h->color_type = png_get_color_type(h->png, h->info);
     if (debug)
 	fprintf(stderr,"png: color_type=%s #2\n",ct[h->color_type]);
-    
+
     h->image = malloc(i->width * i->height * 4);
-    
+
     for (pass = 0; pass < number_passes-1; pass++) {
 	if (debug)
 	    fprintf(stderr,"png: pass #%d\n",pass);

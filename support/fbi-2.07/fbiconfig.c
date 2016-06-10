@@ -67,6 +67,12 @@ struct cfg_cmdline fbi_cfg[] = {
 	.desc     = "  use width only for autoscaling",
 
     },{
+	.letter   = 'v',
+	.cmdline  = "verbose",
+	.option   = { O_VERBOSE },
+	.yesno    = 1,
+	.desc     = "show filenames all the time",
+    },{
 	.letter   = 'u',
 	.cmdline  = "random",
 	.option   = { O_RANDOM },
@@ -78,6 +84,11 @@ struct cfg_cmdline fbi_cfg[] = {
 	.option   = { O_ONCE },
 	.yesno    = 1,
 	.desc     = "don't loop (for use with -t)",
+    },{
+	.cmdline  = "comments",
+	.option   = { O_COMMENTS },
+	.yesno    = 1,
+	.desc     = "display image comments",
     },{
 	.letter   = 'e',
 	.cmdline  = "edit",
@@ -99,12 +110,6 @@ struct cfg_cmdline fbi_cfg[] = {
 	.option   = { O_READ_AHEAD },
 	.yesno    = 1,
 	.desc     = "read ahead images into cache",
-
-    },{
-	.cmdline  = "reset",
-	.option   = { O_RESET },
-	.yesno    = 1,
-	.desc     = "clear the framebuffer and exit",
 
     },{
 	.cmdline  = "cachemem",
@@ -147,6 +152,12 @@ struct cfg_cmdline fbi_cfg[] = {
 	.needsarg = 1,
 	.desc     = "set display gamma (doesn't work on all hardware)",
     },{
+	.letter   = 'f',
+	.cmdline  = "font",
+	.option   = { O_FONT },
+	.needsarg = 1,
+	.desc     = "use font <arg> (anything fontconfig accepts)",
+    },{
 	.letter   = 'd',
 	.cmdline  = "device",
 	.option   = { O_DEVICE },
@@ -163,3 +174,32 @@ struct cfg_cmdline fbi_cfg[] = {
 	/* end of list */
     }
 };
+
+/* ------------------------------------------------------------------------ */
+
+static char *fbi_config = NULL;
+
+static void init_config(void)
+{
+    char *home;
+    
+    home = getenv("HOME");
+    if (NULL == home)
+	return;
+
+    fbi_config = malloc(strlen(home) + 16);
+    sprintf(fbi_config,"%s/.fbirc", home);
+}
+
+void fbi_read_config(void)
+{
+    init_config();
+    if (fbi_config)
+	cfg_parse_file("config", fbi_config);
+}
+
+void fbi_write_config(void)
+{
+    if (fbi_config)
+	cfg_write_file("config", fbi_config);
+}
