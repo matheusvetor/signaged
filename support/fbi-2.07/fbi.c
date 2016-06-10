@@ -272,6 +272,9 @@ static struct flist* flist_last(void)
 
 static struct flist* flist_next(struct flist *f, int eof, int loop)
 {
+    // Felipe
+    eof = 1;
+
     if (flist_islast(f)) {
 	if (eof)
 	    return NULL;
