@@ -23,6 +23,11 @@ struct cfg_cmdline fbi_cmd[] = {
 	.value    = "1",
 	.desc     = "print fbi version number",
     },{
+	.cmdline  = "reset",
+	.option   = { O_RESET },
+	.yesno    = 1,
+	.desc     = "clear the framebuffer and exit",
+    },{
 	.cmdline  = "store",
 	.option   = { O_WRITECONF },
 	.value    = "1",
