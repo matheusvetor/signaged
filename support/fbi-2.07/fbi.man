@@ -1,4 +1,4 @@
-.TH FBI 1 "(c) 1998-2012 Gerd Hoffmann" "FBI 2.08" "Linux framebuffer imageviewer"
+.TH FBI 1 "(c) 1998-2012 Gerd Hoffmann" "FBI 2.09" "Linux framebuffer imageviewer"
 \#
 \#
 .SH NAME
@@ -12,7 +12,7 @@ fbi - Linux framebuffer imageviewer
 .SH DESCRIPTION
 .BR Fbi
 displays the specified file(s) on the linux console using the framebuffer
-device. \fIPhotoCD\fP, \fIjpeg\fP, \fIppm\fP, \fIgif\fP, \fItiff\fP, \fIxwd\fP,
+device. \fIPhotoCD\fP, \fIjpeg\fP, \fIppm\fP, \fIgif\fP, \fItiff\fP, \fIxpm\fP, \fIxwd\fP,
 \fIbmp\fP, \fIpng\fP and \fIwebp\fP formats are supported natively. For other
 .BR fbi
 tries to use
@@ -29,7 +29,7 @@ Print usage info.
 Print \fBfbi\fP version number.
 .TP
 .B --store
-Write command line arguments to config file.
+Write command line arguments to config file \fI~/.fbirc\fP.
 .TP
 .BI "-l" "\ file" ", --list" "\ file"
 Read image filelist from \fIfile\fP.
@@ -58,7 +58,8 @@ Like autozoom, but scale down only.
 Use width only for autoscaling.
 .TP
 .B -v, --(no)verbose
-Be verbose: enable status line on the bottom of the screen.
+Be verbose: enable status line on the bottom of the screen (enabled by
+default).
 .TP
 .B -u, --(no)random
 Randomize the order of the filenames.
@@ -83,7 +84,7 @@ Preserve timestamps (when editing images).
 Read ahead images into cache.
 .TP
 .BI "--cachemem" "\ size"
-Image cache \fIsize\fP in megabytes (MB).
+Image cache \fIsize\fP in megabytes (default is 256).
 .TP
 .BI "--blend" "\ time"
 Image blend \fItime\fP in miliseconds.
@@ -95,17 +96,18 @@ Start on virtual console \fIn\fP.
 Set scroll \fIsteps\fP in pixels (default is 50).
 .TP
 .BI "-t" "\ sec" ", --timeout" "\ sec"
-Load next image after \fIsec\fP seconds without any keypress (i.e. slideshow).
+Start a continuous slideshow where each image is loaded at \fIsec\fP second
+intervals without any keypress.
 .TP
 .B -1, --(no)once
 Don't loop (only use with \fB-t\fP).
 .TP
 .BI "-r" "\ n" ", --resolution" "\ n"
-Select resolution, \fIn = 1..5\fP (only \fIPhotoCD\fP).
+Select resolution, \fIn = 1..5\fP (default is 3, only \fIPhotoCD\fP).
 .TP
 .BI "-g" "\ n" ", --gamma" "\ n"
-Gamma correction. Default is 1.0. Requires \fIPseudocolor\fP or
-\fIDirectcolor\fP visual, doesn't work for \fITruecolor\fP.
+Gamma correction. Requires \fIPseudocolor\fP or \fIDirectcolor\fP visual,
+doesn't work for \fITruecolor\fP (default is 1).
 .TP
 .BI "-f" "\ <arg>" ", --font" "\ <arg>"
 Set font. This \fI<arg>\fP can be anything fontconfig accepts (see
@@ -225,7 +227,7 @@ Mirror image horizontally (left to right).
 The delete function actually wants a capital letter \fBD\fP, thus you have to type
 \fBShift+d\fP. This is done to avoid deleting images by mistake because there
 are no safety bells: If you ask
-.BR fbi
+.BR fbi
 to delete the image, it will be deleted without questions asked.
 .P
 The rotate function actually works for \fIJPEG\fP images only. It does a

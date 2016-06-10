@@ -95,6 +95,7 @@ usage(FILE *fp, char *name)
 	    "  -nt        don't rotate exif thumbnail\n"
 	    "  -ni        don't rotate jpeg image\n"
 	    "  -no        don't update the orientation tag\n"
+	    "  -np        don't pare lost edges\n"
 	    "\n"
 	    "other options:\n"
 	    "  -h         print this help text\n"
@@ -122,6 +123,7 @@ int main(int argc, char *argv[])
     unsigned int flags =
 	JFLAG_TRANSFORM_IMAGE     |
 	JFLAG_TRANSFORM_THUMBNAIL |
+	JFLAG_TRANSFORM_TRIM      |
 	JFLAG_UPDATE_ORIENTATION;
     int dump = 0;
     int i, c, rc;
@@ -167,6 +169,9 @@ int main(int argc, char *argv[])
 		break;
 	    case 'o':
 		flags &= ~JFLAG_UPDATE_ORIENTATION;
+		break;
+	    case 'p':
+		flags &= ~JFLAG_TRANSFORM_TRIM;
 		break;
 	    default:
 		fprintf(stderr,"unknown option -n%c\n",optarg[0]);
@@ -234,7 +239,7 @@ int main(int argc, char *argv[])
     if (NULL == outfile && 0 == inplace) {
 	fprintf(stderr,
 		"you have to either specify a output file (-o <file>)\n"
-		"or enable inplace editing (-i). Try -h for more info.\n");
+		"or enable in-place editing (-i). Try -h for more info.\n");
 	exit(1);
     }
     if (JXFORM_NONE == transform &&
@@ -242,7 +247,7 @@ int main(int argc, char *argv[])
 	!(flags & JFLAG_UPDATE_THUMBNAIL)) {
 	fprintf(stderr,
 		"What do you want to do today?  Neither a new comment nor a\n"
-		"tranformation operation was specified (try -h for more info).\n");
+		"transformation operation was specified (try -h for more info).\n");
 	exit(1);
     }
 

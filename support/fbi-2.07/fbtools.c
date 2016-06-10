@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -22,6 +23,13 @@
 #include <linux/fb.h>
 
 #include "fbtools.h"
+
+#ifndef HAVE_STRSIGNAL
+static const char *strsignal(int signr)
+{
+    return sys_siglist[signr];
+}
+#endif
 
 /* -------------------------------------------------------------------- */
 /* exported stuff                                                       */
@@ -519,6 +527,6 @@ fb_catch_exit_signals(void)
 
     /* cleanup */
     fb_cleanup();
-    fprintf(stderr,"Oops: %s\n",sys_siglist[termsig]);
+    fprintf(stderr,"Oops: %s\n",strsignal(termsig));
     exit(42);
 }

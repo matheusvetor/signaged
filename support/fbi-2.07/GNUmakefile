@@ -30,8 +30,8 @@ include $(srcdir)/mk/Autoconf.mk
 
 ac_jpeg_ver = $(shell \
 	$(call ac_init,for libjpeg version);\
-	$(call ac_s_cmd,echo -e '\#include <jpeglib.h>\nJPEG_LIB_VERSION' \
-		| cpp | tail -n 1);\
+	$(call ac_s_cmd,echo JPEG_LIB_VERSION \
+		| cpp -include jpeglib.h | tail -n 1);\
 	$(call ac_fini))
 
 define make-config
@@ -41,9 +41,9 @@ HAVE_ENDIAN_H	:= $(call ac_header,endian.h)
 HAVE_LINUX_FB_H	:= $(call ac_header,linux/fb.h)
 HAVE_NEW_EXIF	:= $(call ac_header,libexif/exif-log.h)
 HAVE_GLIBC	:= $(call ac_func,fopencookie)
-HAVE_STRCASESTR	:= $(call ac_func,strcasestr)
+HAVE_STRSIGNAL	:= $(call ac_func,strsignal)
 HAVE_LIBPCD	:= $(call ac_lib,pcd_open,pcd)
-HAVE_LIBUNGIF	:= $(call ac_lib,DGifOpenFileName,ungif)
+HAVE_LIBGIF	:= $(call ac_lib,DGifOpenFileName,gif)
 HAVE_LIBPNG	:= $(call ac_lib,png_read_info,png,-lz)
 HAVE_LIBTIFF	:= $(call ac_lib,TIFFOpen,tiff)
 HAVE_LIBWEBP	:= $(call ac_lib,WebPDecodeRGBA,webp)
@@ -69,14 +69,15 @@ ifeq ($(HAVE_LIBCURL),yes)
   ida fbi : LDFLAGS  += -Wl,--wrap=fopen
 endif
 
+PKG_CONFIG = pkg-config
 
 ########################################################################
 # conditional stuff
 
-includes        = ENDIAN_H STRCASESTR NEW_EXIF
-libraries       = PCD UNGIF PNG TIFF WEBP CURL SANE LIRC
-ida_libs	= PCD UNGIF PNG TIFF WEBP CURL SANE
-fbi_libs	= PCD UNGIF PNG TIFF WEBP CURL LIRC
+includes        = ENDIAN_H STRSIGNAL NEW_EXIF
+libraries       = PCD GIF PNG TIFF WEBP CURL SANE LIRC
+ida_libs	= PCD GIF PNG TIFF WEBP CURL SANE
+fbi_libs	= PCD GIF PNG TIFF WEBP CURL LIRC
 
 #MAGICK_CFLAGS	= $(shell Magick-config --cflags)
 #MAGICK_LDFLAGS	= $(shell Magick-config --ldflags)
@@ -87,7 +88,7 @@ PNG_LDLIBS	:= -lpng -lz
 TIFF_LDLIBS	:= -ltiff
 WEBP_LDLIBS	:= -lwebp
 PCD_LDLIBS	:= -lpcd
-UNGIF_LDLIBS	:= -lungif
+GIF_LDLIBS	:= -lgif
 SANE_LDLIBS	:= -lsane
 CURL_LDLIBS	:= -lcurl
 LIRC_LDLIBS     := -llirc_client
@@ -96,7 +97,7 @@ PNG_OBJS	:= rd/read-png.o  wr/write-png.o
 TIFF_OBJS	:= rd/read-tiff.o wr/write-tiff.o
 WEBP_OBJS	:= rd/read-webp.o
 PCD_OBJS	:= rd/read-pcd.o
-UNGIF_OBJS	:= rd/read-gif.o
+GIF_OBJS	:= rd/read-gif.o
 SANE_OBJS	:= sane.o
 CURL_OBJS	:= curl.o
 LIRC_OBJS       := lirc.o
@@ -152,7 +153,7 @@ ida : LDLIBS	+= -lXm -lXpm -lXt -lXext -lX11
 ida : LDLIBS	+= -ljpeg -lexif -lm
 
 # RegEdit.c is good old K&R ...
-RegEdit.o : CFLAGS += -Wno-missing-prototypes -Wno-strict-prototypes
+RegEdit.o : CFLAGS += -Wno-missing-prototypes -Wno-strict-prototypes -Wno-maybe-uninitialized
 
 ida: $(OBJS_IDA) $(OBJS_READER) $(OBJS_WRITER)
 
@@ -179,8 +180,8 @@ OBJS_FBI := \
 OBJS_FBI += $(filter-out wr/%,$(call ac_lib_mkvar,$(fbi_libs),OBJS))
 
 # jpeg/exif libs
-fbi : CFLAGS += $(shell pkg-config --cflags freetype2 fontconfig)
-fbi : LDLIBS += $(shell pkg-config --libs   freetype2 fontconfig)
+fbi : CFLAGS += $(shell $(PKG_CONFIG) --cflags freetype2 fontconfig)
+fbi : LDLIBS += $(shell $(PKG_CONFIG) --libs   freetype2 fontconfig)
 fbi : LDLIBS += -ljpeg -lexif -lm
 
 fbi: $(OBJS_FBI) $(OBJS_READER)

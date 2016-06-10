@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <inttypes.h>
 #include <tiffio.h>
@@ -55,7 +56,7 @@ tiff_init(FILE *fp, char *filename, unsigned int page,
 		"nsamples=%d, depth=%d fo=%d pm=%d scanline=%" PRId32 "\n",
 		h->width,h->height,h->config,h->nsamples,h->depth,
 		h->fillorder,h->photometric,
-		TIFFScanlineSize(h->tif));
+		(uint32_t)TIFFScanlineSize(h->tif));
 
     if (PHOTOMETRIC_PALETTE   == h->photometric  ||
 	PHOTOMETRIC_YCBCR     == h->photometric  ||

@@ -202,6 +202,17 @@ static int get_orientation(ExifData *ed)
     return get_int(ed,ee);
 }
 
+static int get_file_orientation(const char *file)
+{
+    ExifData *ed;
+    int ret;
+
+    ed = exif_data_new_from_file(file);
+    ret = ed ? get_orientation(ed) : 1 /* top - left */;
+    exif_data_unref(ed);
+    return ret;
+}
+
 /* ---------------------------------------------------------------------- */
 
 struct th {
@@ -430,7 +441,10 @@ static int do_transform(struct jpeg_decompress_struct *src,
 
     memset(&transformoption,0,sizeof(transformoption));
     transformoption.transform = transform;
-    transformoption.trim      = FALSE;
+    if (!(flags & JFLAG_TRANSFORM_TRIM))
+        transformoption.trim       = TRUE;
+    else
+        transformoption.trim       = FALSE;
     transformoption.force_grayscale = FALSE;
 
     /* Any space needed by a transform option must be requested before
@@ -548,9 +562,18 @@ int jpeg_transform_inplace(char *file,
     FILE *out = NULL;
 
     /* are we allowed to write to the file? */
-    if (0 != access(file,W_OK)) {
+    if (0 != access(file, R_OK | W_OK)) {
 	fprintf(stderr,"access %s: %s\n",file,strerror(errno));
 	return -1;
+    }
+
+    if (!(flags & JFLAG_UPDATE_COMMENT) &&
+        !(flags & JFLAG_UPDATE_THUMBNAIL)) {
+        /* no forced updates, maybe we can shortcut here? */
+        if (transform == JXFORM_NONE)
+            return 0;
+        if (transform == -1 && get_file_orientation(file) == 1)
+            return 0;
     }
 
     /* open infile */

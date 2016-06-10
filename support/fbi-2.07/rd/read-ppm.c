@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <errno.h>
 
@@ -83,7 +84,7 @@ pbm_read(unsigned char *dst, unsigned int line, void *data)
 
     bpl = ((h->width+7) >> 3);
     fread(h->row,bpl,1,h->infile);
-    load_bits_msb(dst,(unsigned char*)(h->row),h->width,255,0);
+    load_bits_msb(dst,(unsigned char*)(h->row),h->width,0,255);
 }
 
 static void

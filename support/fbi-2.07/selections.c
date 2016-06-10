@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -307,7 +308,7 @@ selection_convert(Widget widget, XtPointer ignore, XtPointer call_data)
     } else if (ccs->target == MIME_IMAGE_PPM) {
 	/* xfer image data directly */
 	cdata = XtMalloc(sel->img.i.width * sel->img.i.height * 3 + 32);
-	n = sprintf(cdata,"P6\n%d %d\n255\n",
+	n = sprintf(cdata,"P6\n%u %u\n255\n",
 		    sel->img.i.width, sel->img.i.height);
 	memcpy(cdata+n, sel->img.data, sel->img.i.width*sel->img.i.height*3);
 	ccs->value  = cdata;
@@ -605,7 +606,7 @@ void ipc_init()
     targets[ntargets++] = MIME_IMAGE_XPM;
     targets[ntargets++] = MIME_IMAGE_BMP;
     targets[ntargets++] = MIME_IMAGE_JPEG;
-#ifdef HAVE_LIBUNGIF
+#ifdef HAVE_LIBGIF
     targets[ntargets++] = MIME_IMAGE_GIF;
 #endif
 #ifdef HAVE_LIBPNG

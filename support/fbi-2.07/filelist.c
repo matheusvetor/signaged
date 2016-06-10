@@ -6,11 +6,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
-#include <fnmatch.h>
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,7 +39,6 @@
 #include "browser.h"
 #include "filter.h"
 #include "x11.h"
-#include "dither.h"
 #include "selections.h"
 #include "filebutton.h"
 #include "filelist.h"

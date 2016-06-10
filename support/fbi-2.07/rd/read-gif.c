@@ -1,9 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <gif_lib.h>
 
 #include "readers.h"
+
+#if defined(GIFLIB_MAJOR) && (GIFLIB_MAJOR >= 5)
+#define GIF5DATA(e)		e
+static void PrintGifError(int err)
+{
+    fprintf(stderr, "GIF library error: %s\n", GifErrorString(err));
+}
+#else
+#define GIF5DATA(x)
+#define PrintGifError(e)	PrintGifError()
+#define DGifOpenFileHandle(x,e)	DGifOpenFileHandle(x)
+#define DGifCloseFile(x,e)	DGifCloseFile(x)
+#endif
 
 struct gif_state {
     FILE         *infile;
@@ -25,7 +39,7 @@ gif_fileread(struct gif_state *h)
 	if (GIF_ERROR == DGifGetRecordType(h->gif,&RecordType)) {
 	    if (debug)
 		fprintf(stderr,"gif: DGifGetRecordType failed\n");
-	    PrintGifError();
+	    PrintGifError(h->gif->Error);
 	    return -1;
 	}
 	switch (RecordType) {
@@ -42,7 +56,7 @@ gif_fileread(struct gif_state *h)
 		if (rc == GIF_ERROR) {
 		    if (debug)
 			fprintf(stderr,"gif: DGifGetExtension failed\n");
-		    PrintGifError();
+		    PrintGifError(h->gif->Error);
 		    return -1;
 		}
 		if (debug) {
@@ -93,12 +107,13 @@ gif_init(FILE *fp, char *filename, unsigned int page,
     struct gif_state *h;
     GifRecordType RecordType;
     int i, image = 0;
+    GIF5DATA(int giferror = 0;)
     
     h = malloc(sizeof(*h));
     memset(h,0,sizeof(*h));
 
     h->infile = fp;
-    h->gif = DGifOpenFileHandle(fileno(fp));
+    h->gif = DGifOpenFileHandle(fileno(fp), &giferror);
     h->row = malloc(h->gif->SWidth * sizeof(GifPixelType));
 
     while (0 == image) {
@@ -108,7 +123,7 @@ gif_init(FILE *fp, char *filename, unsigned int page,
 	    if (GIF_ERROR == DGifGetImageDesc(h->gif)) {
 		if (debug)
 		    fprintf(stderr,"gif: DGifGetImageDesc failed\n");
-		PrintGifError();
+		PrintGifError(giferror);
 	    }
 	    if (NULL == h->gif->SColorMap &&
 		NULL == h->gif->Image.ColorMap) {
@@ -156,7 +171,7 @@ gif_init(FILE *fp, char *filename, unsigned int page,
  oops:
     if (debug)
 	fprintf(stderr,"gif: fatal error, aborting\n");
-    DGifCloseFile(h->gif);
+    DGifCloseFile(h->gif, NULL);
     fclose(h->infile);
     free(h->row);
     free(h);
@@ -196,7 +211,7 @@ gif_done(void *data)
 
     if (debug)
 	fprintf(stderr,"gif: done, cleaning up\n");
-    DGifCloseFile(h->gif);
+    DGifCloseFile(h->gif, NULL);
     fclose(h->infile);
     if (h->il)
 	free(h->il);
@@ -208,7 +223,7 @@ static struct ida_loader gif_loader = {
     magic: "GIF",
     moff:  0,
     mlen:  3,
-    name:  "libungif",
+    name:  "giflib",
     init:  gif_init,
     read:  gif_read,
     done:  gif_done,

@@ -1,4 +1,4 @@
-.TH EXIFTRAN 1 "(c) 2002-2012 Gerd Hoffmann" "EXIFTRAN 2.08" "Transformation d'images jpeg d'appareil photo numérique"
+.TH EXIFTRAN 1 "(c) 2002-2012 Gerd Hoffmann" "EXIFTRAN 2.09" "Transformation d'images jpeg d'appareil photo numérique"
 \#
 \#
 .SH NOM
@@ -31,7 +31,7 @@ pivote aussi la miniature exif. Il peut traiter plusieurs images en une seule
 opération.
 \#
 \#
-.SH "OPTIONS DE TRANSFORMATION"
+.SH "OPTIONS DE TRANSFORMATION"
 .TP
 .B -a
 Automatique (utilise la propriété d'orientation exif).
@@ -72,6 +72,13 @@ Ne pas mettre à jour la propriété d'orientation. Par défaut
 positionne l'orientation à "1" (aucune transformation nécessaire) pour
 empêcher d'autres logiciels de manipulation des données exif d'essayer de
 pivoter l'image qui l'est déjà.
+.TP
+.B -np
+Ne pas couper les bordures perdus. Par défaut
+.BR exiftran
+ne préserve pas la dimension des images qui ne respectent pas un multiple de 8
+pixels. Il préfère couper une bande de quelques pixels plutôt que d'offrir une
+image détériorée. Utilisez cette options si vous les voulez tout de même.
 \#
 \#
 .SH "AUTRES OPTIONS"

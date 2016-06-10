@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <errno.h>
 #include <sane/sane.h>
@@ -243,7 +244,7 @@ sane_idainit(FILE *fp, char *filename, unsigned int page, struct ida_image_info 
 	info->dpi  = dpi;
     h->buf = malloc(h->parm.bytes_per_line * BUF_LINES);
     if (debug)
-	fprintf(stderr,"sane: scanning %dx%d %s\n",info->width,info->height,
+	fprintf(stderr,"sane: scanning %ux%u %s\n",info->width,info->height,
 		(h->parm.format == SANE_FRAME_GRAY) ? "gray" : "color");
 
     return h;
