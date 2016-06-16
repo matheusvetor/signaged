@@ -100,10 +100,12 @@ class Schedule
       item = case item['type']
              when 'video'
                Video.new(url)
-             when
+             when 'article'
+               display_time = item['display_time']
                Article.new(url, article_duration)
-             when
-               Image.new(url)
+             when 'image'
+               display_time = item['display_time']
+               Image.new(url, article_duration)
              end
       items << item
     end
@@ -202,10 +204,10 @@ network={
       _item = case item['type']
              when 'video'
                Video.new(url, disable_audio)
-             when
+             when 'article'
                display_time = item['display_time']
                Article.new(url, article_duration)
-             when
+             when 'image'
                display_time = item['display_time']
                Image.new(url, display_time)
              end
