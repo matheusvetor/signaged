@@ -102,10 +102,10 @@ class Schedule
                Video.new(url)
              when 'article'
                display_time = item['display_time']
-               Article.new(url, article_duration)
+               Article.new(url, display_time)
              when 'image'
                display_time = item['display_time']
-               Image.new(url, article_duration)
+               Image.new(url, display_time)
              end
       items << item
     end
@@ -206,7 +206,7 @@ network={
                Video.new(url, disable_audio)
              when 'article'
                display_time = item['display_time']
-               Article.new(url, article_duration)
+               Article.new(url, display_time)
              when 'image'
                display_time = item['display_time']
                Image.new(url, display_time)
