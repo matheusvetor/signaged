@@ -61,7 +61,7 @@ end
 class Article < Loadable
   attr_reader :type, :url, :article_duration
 
-  def initialize(url)
+  def initialize(url, article_duration)
     @url = URI.parse(url)
     @type = "article"
     @article_duration = article_duration
