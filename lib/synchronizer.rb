@@ -197,13 +197,13 @@ network={
     create_wifi_config(json['wifi_config']) unless json['wifi_config'].nil?
 
     disable_audio = json['disable_audio']
-    article_duration = json['article_duration']
     json['items'].each do |item|
       url = item['url']
       _item = case item['type']
              when 'video'
                Video.new(url, disable_audio)
              when
+               article_duration = item['article_duration']
                Article.new(url, article_duration)
              when
                display_time = item['display_time']
