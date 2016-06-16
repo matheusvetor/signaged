@@ -59,12 +59,12 @@ class Image < Loadable
 end
 
 class Article < Loadable
-  attr_reader :type, :url, :article_duration
+  attr_reader :type, :url, :display_time
 
-  def initialize(url, article_duration)
+  def initialize(url, display_time)
     @url = URI.parse(url)
     @type = "article"
-    @article_duration = article_duration
+    @display_time = display_time
   end
 
   def download
@@ -203,7 +203,7 @@ network={
              when 'video'
                Video.new(url, disable_audio)
              when
-               article_duration = item['article_duration']
+               display_time = item['display_time']
                Article.new(url, article_duration)
              when
                display_time = item['display_time']

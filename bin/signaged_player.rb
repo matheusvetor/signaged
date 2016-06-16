@@ -91,7 +91,7 @@ while !should_end
         command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
         image_player_pid = spawn(command)
         puts "#{$PROGRAM_NAME}: spawn: #{command}"
-        sleep article.article_duration
+        sleep article.display_time
         system("killall fbi")
         puts "#{$PROGRAM_NAME}: fbi probably killed"
       end
