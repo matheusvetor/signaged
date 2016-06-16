@@ -41,7 +41,7 @@ end
 class Video < Loadable
   attr_reader :type, :url, :disable_audio
 
-  def initialize(url, disable_audio = nil)
+  def initialize(url, disable_audio)
     @url = URI.parse(url)
     @type = "video"
     @disable_audio = !!disable_audio
