@@ -5,9 +5,6 @@ require_relative '../lib/synchronizer.rb'
 
 usage = $PROGRAM_NAME + ": Usage: signage.rb SERVER_URL [SERIAL]"
 
-default_serial = "CD9AK29HYCGPAH09"
-prod_server = "http://admin.tvopen.com.br"
-
 # The production server address
 SERVER = begin
            if ARGV[0]
@@ -47,11 +44,11 @@ while true
 
   if current_schedule['id'] != last_schedule_id
     player_pid = begin
-	           File.read([$content_dir, 'signaged_player.pid'].join('/')).to_i
+                   File.read([$content_dir, 'signaged_player.pid'].join('/')).to_i
                  rescue
                    -1
                  end
-    
+
     puts "PID on File: '#{player_pid}'"
 
     if player_pid > 0
@@ -65,8 +62,8 @@ while true
     end
 
     # spawn the player
-    serialized_itineraries = Shellwords.escape JSON.generate(current_schedule['itineraries'])
-    spawn("#{base_dir}/signaged_player.rb #{serialized_itineraries}")
+    serialized_items = Shellwords.escape JSON.generate(current_schedule['items'])
+    spawn("#{base_dir}/signaged_player.rb #{serialized_items}")
   end
 
   last_schedule_id = current_schedule['id']

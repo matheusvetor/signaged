@@ -5,7 +5,6 @@ require 'net/http'
 require 'json'
 require 'tempfile'
 
-# Downloadable object
 class Loadable
   def initialize(url)
     @url = URI.parse(url)
@@ -39,7 +38,6 @@ class Loadable
   end
 end
 
-# Videos can be downloaded
 class Video < Loadable
   attr_reader :type, :url, :disable_audio
 
@@ -50,11 +48,20 @@ class Video < Loadable
   end
 end
 
-# HTML articles can be downloaded
+class Image < Loadable
+  attr_reader :type, :url, :display_time
+
+  def initialize(url, display_time)
+    @url = URI.parse(url)
+    @type = "image"
+    @display_time = display_time
+  end
+end
+
 class Article < Loadable
   attr_reader :type, :url, :article_duration
 
-  def initialize(url, article_duration = 15)
+  def initialize(url)
     @url = URI.parse(url)
     @type = "article"
     @article_duration = article_duration
@@ -75,10 +82,6 @@ class Article < Loadable
     "#{file_path}.png"
   end
 
-  def video_path
-    "#{file_path}.avi"
-  end
-
   def download_rendered_page
     unless File.exist?(rendered_image_path)
       tmp_file = Tempfile.new(filename)
@@ -89,41 +92,47 @@ class Article < Loadable
 end
 
 class Schedule
-  def self.parse_itineraries(serialized_itineraries)
-    parsed_itineraries = JSON.parse(serialized_itineraries)
-    itineraries = []
-    parsed_itineraries.each do |itinerary|
-      url = itinerary['url']
-      item = itinerary['type'] == 'video' ? Video.new(url) : Article.new(url)
-      itineraries << item
+  def self.parse_items(serialized_items)
+    parsed_items = JSON.parse(serialized_items)
+    items = []
+    parsed_items.each do |item|
+      url = item['url']
+      item = case item['type']
+             when 'video'
+               Video.new(url)
+             when
+               Article.new(url, article_duration)
+             when
+               Image.new(url)
+             end
+      items << item
     end
-    itineraries
+    items
   end
 end
 
 class Synchronizer
-  attr_accessor :itineraries
+  attr_accessor :items
 
   def initialize(server, serial)
     @server = server
     @serial = serial
-    @itineraries = []
+    @items = []
   end
 
-  def itineraries_uri
-    URI "#{@server}/api/devices/#{@serial}.json"
+  def items_uri
+    URI "#{@server}/api/devices/#{@serial}/sync.json"
   end
 
   def response
-    Net::HTTP.get_response itineraries_uri
+    Net::HTTP.get_response items_uri
   end
 
   # {
   #   id: "f212512",
-  #   article_duration: 2
   #   check_after:  43000
   #   disable_audio: true
-  #   itineraries: [
+  #   items: [
   #     {
   #       type: "video" | "article" | ...,
   #       url: "http://..."
@@ -131,6 +140,7 @@ class Synchronizer
   #     ...
   #   ]
   # }
+
   def json_response
     begin
       parsed_json = JSON.parse response.body
@@ -154,14 +164,13 @@ class Synchronizer
       file.close
       parsed_json
     rescue
-      raise "Can't download JSON itinerary no find the local file"
+      raise "Can't download JSON items no find the local file"
     end
   end
 
   def create_wifi_config(json)
 
     wifi_config0 = <<-EOF
-ctrl_interface=/var/run/wpa_supplicant
 network={
   ssid="#{json['wifi_name']}"
   key_mgmt=NONE
@@ -169,24 +178,9 @@ network={
     EOF
 
     wifi_config1 = <<-EOF
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-
 network={
-ssid="#{json['wifi_name']}"
-psk="#{json['wifi_password']}"
-
-# Protocol type can be: RSN (for WP2) and WPA (for WPA1)
-proto=WPA
-
-# Key management type can be: WPA-PSK or WPA-EAP (Pre-Shared or Enterprise)
-key_mgmt=WPA-PSK
-
-# Pairwise can be CCMP or TKIP (for WPA2 or WPA1)
-pairwise=TKIP
-
-#Authorization option should be OPEN for both WPA1/WPA2 (in less commonly used are SHARED and LEAP)
-auth_alg=OPEN
+  ssid="#{json['wifi_name']}"
+  psk="#{json['wifi_password']}"
 }
     EOF
 
@@ -202,22 +196,29 @@ auth_alg=OPEN
 
     create_wifi_config(json['wifi_config']) unless json['wifi_config'].nil?
 
-    article_duration = json['article_duration']
     disable_audio = json['disable_audio']
-    json['itineraries'].each do |itinerary|
-      url = itinerary['url']
-      item = itinerary['type'] == 'video' ? Video.new(url, disable_audio) : Article.new(url, article_duration)
-      item.download
-      @itineraries << item
+    article_duration = json['article_duration']
+    json['items'].each do |item|
+      url = item['url']
+      _item = case item['type']
+             when 'video'
+               Video.new(url, disable_audio)
+             when
+               Article.new(url, article_duration)
+             when
+               display_time = item['display_time']
+               Image.new(url, display_time)
+             end
+      _item.download
+      @items << _item
     end
-    # cleanup_unused_files
 
     return json
   end
 
   def cleanup_unused_files
-    video_files = @itineraries.select{ |item| item.class == Video }
-    article_files = @itineraries.select{ |item| item.class == Article }
+    video_files = @items.select{ |item| item.class == Video }
+    article_files = @items.select{ |item| item.class == Article }
     article_png_files = []
     article_files.each { |item| article_png_files << "#{item.filename}.png" }
 

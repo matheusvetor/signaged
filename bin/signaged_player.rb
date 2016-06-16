@@ -3,9 +3,9 @@
 require 'shellwords'
 require_relative '../lib/synchronizer.rb'
 
-serialized_itineraries = ARGV[0]
-if !serialized_itineraries
-  puts $PROGRAM_NAME + ": Usage: signaged_player.rb [ITINERARIES_JSON]"
+serialized_items = ARGV[0]
+if !serialized_items
+  puts $PROGRAM_NAME + ": Usage: signaged_player.rb [ITEMS_JSON]"
   exit(1)
 end
 
@@ -20,12 +20,12 @@ File.open("#{$content_dir}/signaged_player.pid", "wb") do |file|
   file.write(Process.pid)
 end
 
-itineraries = Schedule.parse_itineraries(serialized_itineraries)
+items = Schedule.parse_items(serialized_items)
 
 ScheduleRun = Struct.new(:type, :items)
 command_seq = []
 
-itineraries.each do |it|
+items.each do |it|
   if command_seq.empty?
     run = ScheduleRun.new
     run.type = it.type
@@ -75,6 +75,16 @@ while !should_end
         status = Process.waitpid2(video_player_pid)
         puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
       end
+    when "image"
+      it.items.each do |image|
+        file_path = Shellwords.escape(image.file_path)
+        command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
+        image_player_pid = spawn(command)
+        puts "#{$PROGRAM_NAME}: spawn: #{command}"
+        sleep image.display_time
+        system("killall fbi")
+        puts "#{$PROGRAM_NAME}: fbi probably killed"
+      end
     when "article"
       it.items.each do |article|
         file_path = Shellwords.escape(article.rendered_image_path)
@@ -82,7 +92,7 @@ while !should_end
         image_player_pid = spawn(command)
         puts "#{$PROGRAM_NAME}: spawn: #{command}"
         sleep article.article_duration
-        killall_pid = system("killall fbi")
+        system("killall fbi")
         puts "#{$PROGRAM_NAME}: fbi probably killed"
       end
     end
