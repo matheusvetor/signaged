@@ -1,8 +1,9 @@
 
 install-on-macosx:
-	brew install nodejs npm phantomjs
-	sudo npm update
-	sudo npm install temp phantom
+
+    brew install nodejs npm phantomjs
+    sudo npm update
+    sudo npm install temp phantom
 
 install-on-pi:
 

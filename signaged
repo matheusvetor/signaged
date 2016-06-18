@@ -42,6 +42,7 @@ function start() {
     then
         echo "signaged is already running"
     else
+        git pull origin visont
         start_html2img
         sleep 15
         echo "Starting signaged ..."
