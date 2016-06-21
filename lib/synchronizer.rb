@@ -6,10 +6,11 @@ require 'json'
 require 'tempfile'
 
 class Loadable
-  attr_reader :impress_url
+  attr_reader :impress_url, :can_download
   def initialize(url, impress_url)
     @url = URI.parse(url)
     @impress_url = URI.parse(impress_url)
+    @can_download = true
   end
 
   def send_impression
@@ -30,11 +31,15 @@ class Loadable
 
   def response
     puts "#{$PROGRAM_NAME}: Downloading file #{url.to_s} into #{file_path}"
-    Net::HTTP.get_response(@url)
+    begin
+      Net::HTTP.get_response(@url)
+    rescue
+      @can_download = false
+    end
   end
 
   def download
-    unless File.exist?(file_path)
+    if @can_download && !File.exist?(file_path)
       tmp_file_path = 'download.' + rand(1000000).to_s
       tmp_file = File.open(tmp_file_path, "wb")
       tmp_file.write(response.body)
@@ -75,18 +80,24 @@ class Article < Loadable
 
   # article always get file
   def download
-    tmp_file_path = 'download.' + rand(1000000).to_s
-    tmp_file = File.open(tmp_file_path, "wb")
-    tmp_file.write(response.body)
-    tmp_file.close
-    FileUtils.move(tmp_file_path, file_path, force: true)
-    download_rendered_page
+    if @can_download
+      tmp_file_path = 'download.' + rand(1000000).to_s
+      tmp_file = File.open(tmp_file_path, "wb")
+      tmp_file.write(response.body)
+      tmp_file.close
+      FileUtils.move(tmp_file_path, file_path, force: true)
+      download_rendered_page
+    end
   end
 
   def rendered_page_response
     url = "http://localhost:3000/?file_path=#{relative_file_path}"
     puts "#{$PROGRAM_NAME}: Downloading file #{url}"
-    Net::HTTP.get_response(URI.parse(url))
+    begin
+      Net::HTTP.get_response(URI.parse(url))
+    rescue
+      @can_download = false
+    end
   end
 
   def rendered_image_path
@@ -94,9 +105,11 @@ class Article < Loadable
   end
 
   def download_rendered_page
-    tmp_file = Tempfile.new(filename)
-    tmp_file.write(rendered_page_response.body)
-    FileUtils.move(tmp_file.path, rendered_image_path, force: true)
+    if @can_download
+      tmp_file = Tempfile.new(filename)
+      tmp_file.write(rendered_page_response.body)
+      FileUtils.move(tmp_file.path, rendered_image_path, force: true)
+    end
   end
 end
 
@@ -124,12 +137,13 @@ class Schedule
 end
 
 class Synchronizer
-  attr_accessor :items
+  attr_accessor :items, :can_download
 
   def initialize(server, serial)
     @server = server
     @serial = serial
     @items = []
+    @can_download = true
   end
 
   def items_uri
@@ -137,7 +151,11 @@ class Synchronizer
   end
 
   def response
-    Net::HTTP.get_response items_uri
+    begin
+      Net::HTTP.get_response items_uri
+    rescue
+      @can_download = false
+    end
   end
 
   # {
@@ -172,7 +190,7 @@ class Synchronizer
 
     begin
       file = File.open("#{$content_dir}/#{@serial}.json")
-      parsed_json = JSON.parse file.read
+      parsed_json = JSON.parse(file.read)
       file.close
       parsed_json
     rescue
@@ -222,7 +240,7 @@ network={
                display_time = item['display_time']
                Image.new(url, impress_url, display_time)
              end
-      _item.download
+      _item.download if @can_download
       @items << _item
     end
 
@@ -232,12 +250,13 @@ network={
   def cleanup_unused_files
     video_files = @items.select{ |item| item.class == Video }
     article_files = @items.select{ |item| item.class == Article }
+    image_files = @items.select{ |item| item.class == Image }
     article_png_files = []
     article_files.each { |item| article_png_files << "#{item.filename}.png" }
 
     delete_article_files =  Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f } - [article_png_files, article_files.map(&:filename)].flatten
-
     delete_video_files =  Dir.entries("/home/pi/signaged/downloads/video").reject { |f| File.directory? f } - video_files.map(&:filename)
+    delete_image_files =  Dir.entries("/home/pi/signaged/downloads/image").reject { |f| File.directory? f } - image_files.map(&:filename)
 
     FileUtils.cd('/home/pi/signaged/downloads/article') do
       FileUtils.rm(delete_article_files)
@@ -245,6 +264,10 @@ network={
 
     FileUtils.cd('/home/pi/signaged/downloads/video') do
       FileUtils.rm(delete_video_files)
+    end
+
+    FileUtils.cd('/home/pi/signaged/downloads/article') do
+      FileUtils.rm(delete_article_files)
     end
   end
 end

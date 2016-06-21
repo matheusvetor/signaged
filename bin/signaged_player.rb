@@ -69,34 +69,40 @@ while !should_end
     when "video"
       it.items.each do |video|
         file_path = Shellwords.escape(video.file_path)
-        command = "omxplayer -o hdmi #{file_path} > /dev/null 2>&1"
-        puts "#{$PROGRAM_NAME}: spawn: #{command}"
-        video_player_pid = spawn(command)
-        video.send_impression
-        status = Process.waitpid2(video_player_pid)
-        puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
+        if File.exist?(file_path)
+          command = "omxplayer -o hdmi #{file_path} > /dev/null 2>&1"
+          puts "#{$PROGRAM_NAME}: spawn: #{command}"
+          video_player_pid = spawn(command)
+          video.send_impression
+          status = Process.waitpid2(video_player_pid)
+          puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
+        end
       end
     when "image"
       it.items.each do |image|
         file_path = Shellwords.escape(image.file_path)
-        command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
-        image_player_pid = spawn(command)
-        puts "#{$PROGRAM_NAME}: spawn: #{command}"
-        image.send_impression
-        sleep image.display_time
-        system("killall fbi")
-        puts "#{$PROGRAM_NAME}: fbi probably killed"
+        if File.exist?(file_path)
+          command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
+          image_player_pid = spawn(command)
+          puts "#{$PROGRAM_NAME}: spawn: #{command}"
+          image.send_impression
+          sleep image.display_time
+          system("killall fbi")
+          puts "#{$PROGRAM_NAME}: fbi probably killed"
+        end
       end
     when "article"
       it.items.each do |article|
         file_path = Shellwords.escape(article.rendered_image_path)
-        command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
-        image_player_pid = spawn(command)
-        puts "#{$PROGRAM_NAME}: spawn: #{command}"
-        article.send_impression
-        sleep article.display_time
-        system("killall fbi")
-        puts "#{$PROGRAM_NAME}: fbi probably killed"
+        if File.exist?(file_path)
+          command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
+          image_player_pid = spawn(command)
+          puts "#{$PROGRAM_NAME}: spawn: #{command}"
+          article.send_impression
+          sleep article.display_time
+          system("killall fbi")
+          puts "#{$PROGRAM_NAME}: fbi probably killed"
+        end
       end
     end
   end
