@@ -94,11 +94,9 @@ class Article < Loadable
   end
 
   def download_rendered_page
-    unless File.exist?(rendered_image_path)
-      tmp_file = Tempfile.new(filename)
-      tmp_file.write(rendered_page_response.body)
-      FileUtils.move(tmp_file.path, rendered_image_path, force: true)
-    end
+    tmp_file = Tempfile.new(filename)
+    tmp_file.write(rendered_page_response.body)
+    FileUtils.move(tmp_file.path, rendered_image_path, force: true)
   end
 end
 
