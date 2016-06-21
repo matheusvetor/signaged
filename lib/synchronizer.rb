@@ -6,8 +6,14 @@ require 'json'
 require 'tempfile'
 
 class Loadable
-  def initialize(url)
+  attr_reader :impress_url
+  def initialize(url, impress_url)
     @url = URI.parse(url)
+    @impress_url = URI.parse(impress_url)
+  end
+
+  def send_impression
+    spawn("curl #{@impress_url}")
   end
 
   def filename
@@ -24,7 +30,7 @@ class Loadable
 
   def response
     puts "#{$PROGRAM_NAME}: Downloading file #{url.to_s} into #{file_path}"
-    Net::HTTP.get_response @url
+    Net::HTTP.get_response(@url)
   end
 
   def download
@@ -41,8 +47,8 @@ end
 class Video < Loadable
   attr_reader :type, :url, :disable_audio
 
-  def initialize(url, disable_audio = nil)
-    @url = URI.parse(url)
+  def initialize(url, impress_url, disable_audio = nil)
+    super(url, impress_url)
     @type = "video"
     @disable_audio = !!disable_audio
   end
@@ -51,8 +57,8 @@ end
 class Image < Loadable
   attr_reader :type, :url, :display_time
 
-  def initialize(url, display_time)
-    @url = URI.parse(url)
+  def initialize(url, impress_url, display_time)
+    super(url, impress_url)
     @type = "image"
     @display_time = display_time
   end
@@ -61,8 +67,8 @@ end
 class Article < Loadable
   attr_reader :type, :url, :display_time
 
-  def initialize(url, display_time)
-    @url = URI.parse(url)
+  def initialize(url, impress_url, display_time)
+    super(url, impress_url)
     @type = "article"
     @display_time = display_time
   end
@@ -73,14 +79,14 @@ class Article < Loadable
     tmp_file = File.open(tmp_file_path, "wb")
     tmp_file.write(response.body)
     tmp_file.close
-    FileUtils.move(tmp_file_path, file_path)
+    FileUtils.move(tmp_file_path, file_path, force: true)
     download_rendered_page
   end
 
   def rendered_page_response
-    url = 'http://localhost:3000/?file_path=' + relative_file_path
-    puts $PROGRAM_NAME + ": Downloading file " + url
-    Net::HTTP.get_response URI.parse(url)
+    url = "http://localhost:3000/?file_path=#{relative_file_path}"
+    puts "#{$PROGRAM_NAME}: Downloading file #{url}"
+    Net::HTTP.get_response(URI.parse(url))
   end
 
   def rendered_image_path
@@ -91,7 +97,7 @@ class Article < Loadable
     unless File.exist?(rendered_image_path)
       tmp_file = Tempfile.new(filename)
       tmp_file.write(rendered_page_response.body)
-      FileUtils.move(tmp_file.path, rendered_image_path)
+      FileUtils.move(tmp_file.path, rendered_image_path, force: true)
     end
   end
 end
@@ -102,15 +108,16 @@ class Schedule
     items = []
     parsed_items.each do |item|
       url = item['url']
+      impress_url = item['impress_url']
       item = case item['type']
              when 'video'
-               Video.new(url)
+               Video.new(url, impress_url)
              when 'article'
                display_time = item['display_time']
-               Article.new(url, display_time)
+               Article.new(url, impress_url, display_time)
              when 'image'
                display_time = item['display_time']
-               Image.new(url, display_time)
+               Image.new(url, impress_url, display_time)
              end
       items << item
     end
@@ -206,15 +213,16 @@ network={
     disable_audio = json['disable_audio']
     json['items'].each do |item|
       url = item['url']
+      impress_url = item['impress_url']
       _item = case item['type']
              when 'video'
-               Video.new(url, disable_audio)
+               Video.new(url, impress_url)
              when 'article'
                display_time = item['display_time']
-               Article.new(url, display_time)
+               Article.new(url, impress_url, display_time)
              when 'image'
                display_time = item['display_time']
-               Image.new(url, display_time)
+               Image.new(url, impress_url, display_time)
              end
       _item.download
       @items << _item
