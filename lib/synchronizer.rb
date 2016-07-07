@@ -79,9 +79,7 @@ class Article < Loadable
 
   def download
     super
-    if @can_download
-      download_rendered_page
-    end
+    download_rendered_page
   end
 
   def rendered_page_response
@@ -99,7 +97,7 @@ class Article < Loadable
   end
 
   def download_rendered_page
-    if @can_download
+    if @can_download && !File.exist?(rendered_image_path)
       tmp_file = Tempfile.new(filename)
       tmp_file.write(rendered_page_response.body)
       FileUtils.move(tmp_file.path, rendered_image_path, force: true)
