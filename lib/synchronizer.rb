@@ -50,12 +50,11 @@ class Loadable
 end
 
 class Video < Loadable
-  attr_reader :type, :url, :disable_audio
+  attr_reader :type, :url
 
-  def initialize(url, impress_url, disable_audio = nil)
+  def initialize(url, impress_url)
     super(url, impress_url)
     @type = "video"
-    @disable_audio = !!disable_audio
   end
 end
 
@@ -78,14 +77,9 @@ class Article < Loadable
     @display_time = display_time
   end
 
-  # article always get file
   def download
+    super
     if @can_download
-      tmp_file_path = 'download.' + rand(1000000).to_s
-      tmp_file = File.open(tmp_file_path, "wb")
-      tmp_file.write(response.body)
-      tmp_file.close
-      FileUtils.move(tmp_file_path, file_path, force: true)
       download_rendered_page
     end
   end
@@ -113,6 +107,16 @@ class Article < Loadable
   end
 end
 
+class Widget < Article
+  attr_reader :type, :url, :display_time
+
+  def initialize(url, impress_url, display_time)
+    super(url, impress_url, display_time)
+    @type = "widget"
+    @display_time = display_time
+  end
+end
+
 class Schedule
   def self.parse_items(serialized_items)
     parsed_items = JSON.parse(serialized_items)
@@ -129,10 +133,32 @@ class Schedule
              when 'image'
                display_time = item['display_time']
                Image.new(url, impress_url, display_time)
+             when 'widget'
+               display_time = item['display_time']
+               Widget.new(url, impress_url, display_time)
              end
       items << item
     end
+    self.class.cleanup_unused_files(items)
     items
+  end
+
+  def self.cleanup_unused_files(items)
+    video_files =   items.select{ |item| item.class == Video }
+    article_files = items.select{ |item| item.class == Article }
+    image_files =   items.select{ |item| item.class == Image }
+    widget_files =  items.select{ |item| item.class == Widget }
+    article_png_files = []
+    widget_png_files =  []
+    article_files.each { |item| article_png_files << "#{item.filename}.png" }
+    widget_files.each  { |item| widget_png_files  << "#{item.filename}.png" }
+
+    delete_article_files =  Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f } - [article_png_files, article_files.map(&:filename)].flatten
+    delete_widget_files =   Dir.entries("/home/pi/signaged/downloads/widget").reject  { |f| File.directory? f } - [widget_png_files, widget_files.map(&:filename)].flatten
+    delete_video_files =    Dir.entries("/home/pi/signaged/downloads/video").reject   { |f| File.directory? f } - video_files.map(&:filename)
+    delete_image_files =    Dir.entries("/home/pi/signaged/downloads/image").reject   { |f| File.directory? f } - image_files.map(&:filename)
+
+    FileUtils.rm(delete_article_files + delete_widget_files + delete_video_files + delete_image_files)
   end
 end
 
@@ -161,7 +187,6 @@ class Synchronizer
   # {
   #   id: "f212512",
   #   check_after:  43000
-  #   disable_audio: true
   #   items: [
   #     {
   #       type: "video" | "article" | ...,
@@ -226,7 +251,6 @@ network={
 
     create_wifi_config(json['wifi_config']) unless json['wifi_config'].nil?
 
-    disable_audio = json['disable_audio']
     json['items'].each do |item|
       url = item['url']
       impress_url = item['impress_url']
@@ -239,35 +263,14 @@ network={
              when 'image'
                display_time = item['display_time']
                Image.new(url, impress_url, display_time)
+             when 'widget'
+               display_time = item['display_time']
+               Widget.new(url, impress_url, display_time)
              end
       _item.download if @can_download
       @items << _item
     end
 
     return json
-  end
-
-  def cleanup_unused_files
-    video_files = @items.select{ |item| item.class == Video }
-    article_files = @items.select{ |item| item.class == Article }
-    image_files = @items.select{ |item| item.class == Image }
-    article_png_files = []
-    article_files.each { |item| article_png_files << "#{item.filename}.png" }
-
-    delete_article_files =  Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f } - [article_png_files, article_files.map(&:filename)].flatten
-    delete_video_files =  Dir.entries("/home/pi/signaged/downloads/video").reject { |f| File.directory? f } - video_files.map(&:filename)
-    delete_image_files =  Dir.entries("/home/pi/signaged/downloads/image").reject { |f| File.directory? f } - image_files.map(&:filename)
-
-    FileUtils.cd('/home/pi/signaged/downloads/article') do
-      FileUtils.rm(delete_article_files)
-    end
-
-    FileUtils.cd('/home/pi/signaged/downloads/video') do
-      FileUtils.rm(delete_video_files)
-    end
-
-    FileUtils.cd('/home/pi/signaged/downloads/article') do
-      FileUtils.rm(delete_article_files)
-    end
   end
 end

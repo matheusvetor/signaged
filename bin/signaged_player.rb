@@ -59,8 +59,8 @@ end
 
 if command_seq.empty?
   %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
-else
-  %x(fbi -T 2 -reset)
+# else
+  # %x(fbi -T 2 -reset)
 end
 
 while !should_end
@@ -70,7 +70,7 @@ while !should_end
       it.items.each do |video|
         file_path = Shellwords.escape(video.file_path)
         if File.exist?(file_path)
-          command = "omxplayer -o hdmi #{file_path} > /dev/null 2>&1"
+          command = "omxplayer -o hdmi --no-keys -n -1 #{file_path} > /dev/null 2>&1"
           puts "#{$PROGRAM_NAME}: spawn: #{command}"
           video_player_pid = spawn(command)
           video.send_impression
@@ -91,15 +91,15 @@ while !should_end
           puts "#{$PROGRAM_NAME}: fbi probably killed"
         end
       end
-    when "article"
-      it.items.each do |article|
-        file_path = Shellwords.escape(article.rendered_image_path)
+    when "article", "widget"
+      it.items.each do |item|
+        file_path = Shellwords.escape(item.rendered_image_path)
         if File.exist?(file_path)
           command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
           image_player_pid = spawn(command)
           puts "#{$PROGRAM_NAME}: spawn: #{command}"
-          article.send_impression
-          sleep article.display_time
+          item.send_impression
+          sleep item.display_time
           system("killall fbi")
           puts "#{$PROGRAM_NAME}: fbi probably killed"
         end
