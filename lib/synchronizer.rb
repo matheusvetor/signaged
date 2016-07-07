@@ -139,7 +139,6 @@ class Schedule
              end
       items << item
     end
-    self.class.cleanup_unused_files(items)
     items
   end
 

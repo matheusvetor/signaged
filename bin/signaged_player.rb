@@ -21,6 +21,7 @@ File.open("#{$content_dir}/signaged_player.pid", "wb") do |file|
 end
 
 items = Schedule.parse_items(serialized_items)
+Schedule.cleanup_unused_files(items)
 
 ScheduleRun = Struct.new(:type, :items)
 command_seq = []
