@@ -32,6 +32,11 @@ function start_html2img() {
     /usr/bin/node "$signaged_home/bin/html2img-server.js" "$signaged_home/downloads" &
 }
 
+function update_code() {
+    echo "Updating code..."
+    cd signaged_home && git pull origin visont
+}
+
 function stop_html2img() {
     echo "Stopping html2img server..."
     killall node
@@ -42,7 +47,7 @@ function start() {
     then
         echo "signaged is already running"
     else
-        git pull origin visont
+        update_code
         start_html2img
         sleep 15
         echo "Starting signaged ..."
