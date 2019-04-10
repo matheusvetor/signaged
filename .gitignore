@@ -46,8 +46,9 @@ Temporary Items
 *.swo
 tags
 
-node_modules/
-downloads/
+downloads/article/.*
+downloads/video/.*
+downloads/image/.*
 *.o
 support/fbi-2.07/mk/*.dep
 support/fbi-2.07core

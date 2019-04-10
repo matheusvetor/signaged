@@ -7,6 +7,7 @@ require 'tempfile'
 
 class Loadable
   attr_reader :impress_url, :can_download
+
   def initialize(url, impress_url)
     @url = URI.parse(url)
     @impress_url = URI.parse(impress_url)
@@ -75,33 +76,6 @@ class Article < Loadable
     super(url, impress_url)
     @type = "article"
     @display_time = display_time
-  end
-
-  def download
-    super
-    download_rendered_page
-  end
-
-  def rendered_page_response
-    url = "http://localhost:3000/?file_path=#{relative_file_path}"
-    puts "#{$PROGRAM_NAME}: Downloading file #{url}"
-    begin
-      Net::HTTP.get_response(URI.parse(url))
-    rescue
-      @can_download = false
-    end
-  end
-
-  def rendered_image_path
-    "#{file_path}.png"
-  end
-
-  def download_rendered_page
-    if @can_download && !File.exist?(rendered_image_path)
-      tmp_file = Tempfile.new(filename)
-      tmp_file.write(rendered_page_response.body)
-      FileUtils.move(tmp_file.path, rendered_image_path, force: true)
-    end
   end
 end
 

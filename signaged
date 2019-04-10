@@ -13,7 +13,7 @@
 PATH=/usr/local/bin:$PATH
 
 signaged_home="/home/pi/signaged"
-signaged_server="https://signaged.herokuapp.com"
+signaged_server="https://tvopen-staging.herokuapp.com"
 machine_serial=$(grep -i serial /proc/cpuinfo | cut -d : -f2)
 
 pid_file="/var/run/signage.pid"
@@ -27,19 +27,9 @@ function running() {
     fi
 }
 
-function start_html2img() {
-    echo "Starting html2img server..."
-    /usr/bin/node "$signaged_home/bin/html2img-server.js" "$signaged_home/downloads" &
-}
-
 function update_code() {
     echo "Updating code..."
-    cd signaged_home && git pull origin visont
-}
-
-function stop_html2img() {
-    echo "Stopping html2img server..."
-    killall node
+    cd $signaged_home && git pull origin new-tvopen
 }
 
 function start() {
@@ -48,11 +38,9 @@ function start() {
         echo "signaged is already running"
     else
         update_code
-        start_html2img
         sleep 15
         echo "Starting signaged ..."
         fbi -T 2 -reset
-        fbi -T 2 -a -noverbose $signaged_home/assets/images/loading.png
         $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
     fi
 }

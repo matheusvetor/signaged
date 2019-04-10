@@ -60,8 +60,6 @@ end
 
 if command_seq.empty?
   %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
-# else
-  # %x(fbi -T 2 -reset)
 end
 
 while !should_end
@@ -93,14 +91,14 @@ while !should_end
         end
       end
     when "article", "widget"
-      it.items.each do |item|
-        file_path = Shellwords.escape(item.rendered_image_path)
+      it.items.each do |article|
+        file_path = Shellwords.escape(article.file_path)
         if File.exist?(file_path)
           command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
           image_player_pid = spawn(command)
           puts "#{$PROGRAM_NAME}: spawn: #{command}"
-          item.send_impression
-          sleep item.display_time
+          article.send_impression
+          sleep article.display_time
           system("killall fbi")
           puts "#{$PROGRAM_NAME}: fbi probably killed"
         end
