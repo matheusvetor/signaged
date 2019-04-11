@@ -41,7 +41,7 @@ function start() {
         sleep 15
         echo "Starting signaged ..."
         fbi -T 2 -reset
-        $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
+        $signaged_home/bin/signaged.rb $signaged_server $machine_serial #& echo $! > "$pid_file"
     fi
 }
 
