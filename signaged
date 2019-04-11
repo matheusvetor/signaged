@@ -55,7 +55,7 @@ function stop() {
     else
         echo "signaged is not running"
     fi
-    killall fbi ruby node omxplayer
+    killall fbi ruby omxplayer
 }
 
 case "$1" in
