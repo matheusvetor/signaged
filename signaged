@@ -38,7 +38,7 @@ function start() {
         echo "signaged is already running"
     else
         update_code
-        sleep 15
+        sleep 30
         echo "Starting signaged ..."
         fbi -T 2 -reset
         fbi -T 2 -a -noverbose $signaged_home/assets/images/loading.png
