@@ -29,7 +29,7 @@ function running() {
 
 function update_code() {
     echo "Updating code..."
-    cd signaged_home && git pull origin new-tvopen
+    git -C $signaged_home pull origin new-tvopen
 }
 
 function start() {
