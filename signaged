@@ -27,21 +27,13 @@ function running() {
     fi
 }
 
-function update_code() {
-    echo "Updating code..."
-    git -C /home/pi/signaged pull origin new-tvopen
-    git -C $signaged_home pull origin new-tvopen
-}
-
 function start() {
     if running
     then
         echo "signaged is already running"
     else
-        update_code
-        sleep 30
+        sleep 15
         echo "Starting signaged ..."
-        sleep 30
         fbi -T 2 -reset
         fbi -T 2 -a -noverbose $signaged_home/assets/images/loading.png
         $signaged_home/bin/signaged.rb $signaged_server $machine_serial #& echo $! > "$pid_file"
