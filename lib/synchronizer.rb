@@ -51,11 +51,12 @@ class Loadable
 end
 
 class Video < Loadable
-  attr_reader :type, :url
+  attr_reader :type, :url, :allowed_audio
 
-  def initialize(url, impress_url)
+  def initialize(url, impress_url, allowed_audio)
     super(url, impress_url)
-    @type = "video"
+    @type = 'video'
+    @allowed_audio = allowed_audio
   end
 end
 
@@ -64,7 +65,7 @@ class Image < Loadable
 
   def initialize(url, impress_url, display_time)
     super(url, impress_url)
-    @type = "image"
+    @type = 'image'
     @display_time = display_time
   end
 end
@@ -74,7 +75,7 @@ class Article < Loadable
 
   def initialize(url, impress_url, display_time)
     super(url, impress_url)
-    @type = "article"
+    @type = 'article'
     @display_time = display_time
   end
 end
@@ -84,7 +85,7 @@ class Widget < Article
 
   def initialize(url, impress_url, display_time)
     super(url, impress_url, display_time)
-    @type = "widget"
+    @type = 'widget'
     @display_time = display_time
   end
 end
@@ -98,7 +99,8 @@ class Schedule
       impress_url = item['impress_url']
       item = case item['type']
              when 'video'
-               Video.new(url, impress_url)
+               allowed_audio = item['allowed_audio']
+               Video.new(url, impress_url, allowed_audio)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)
@@ -154,18 +156,6 @@ class Synchronizer
       @can_download = false
     end
   end
-
-  # {
-  #   id: "f212512",
-  #   check_after:  43000
-  #   items: [
-  #     {
-  #       type: "video" | "article" | ...,
-  #       url: "http://..."
-  #     },
-  #     ...
-  #   ]
-  # }
 
   def json_response
     begin
@@ -227,7 +217,8 @@ network={
       impress_url = item['impress_url']
       _item = case item['type']
              when 'video'
-               Video.new(url, impress_url)
+               allowed_audio = item['allowed_audio']
+               Video.new(url, impress_url, allowed_audio)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)

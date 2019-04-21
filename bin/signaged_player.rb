@@ -70,6 +70,7 @@ while !should_end
         file_path = Shellwords.escape(video.file_path)
         if File.exist?(file_path)
           command = "omxplayer -o hdmi --no-keys -n -1 #{file_path} > /dev/null 2>&1"
+          command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if video.allowed_audio
           puts "#{$PROGRAM_NAME}: spawn: #{command}"
           video_player_pid = spawn(command)
           video.send_impression
