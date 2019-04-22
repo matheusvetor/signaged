@@ -196,11 +196,11 @@ network={
     wifi_config1 = <<-EOF
 network={
   ssid="#{json['wifi_name']}"
-  psk="#{json['wifi_pass']}"
+  psk="#{json['wifi_password']}"
 }
     EOF
 
-    wifi_config = json['wifi_pass'].empty? ? wifi_config0  : wifi_config1
+    wifi_config = json['wifi_password'].empty? ? wifi_config0  : wifi_config1
 
     File.open("/etc/wpa_supplicant/wpa_supplicant.conf", "wb") do |file|
       file.write(wifi_config)
