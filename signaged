@@ -13,7 +13,7 @@
 PATH=/usr/local/bin:$PATH
 
 signaged_home="/home/pi/signaged"
-signaged_server="https://tvopen-staging.herokuapp.com"
+signaged_server="http://staging.tvopen.com.br"
 machine_serial=$(grep -i serial /proc/cpuinfo | cut -d : -f2)
 
 pid_file="/var/run/signage.pid"
