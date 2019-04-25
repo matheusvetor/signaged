@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require "shellwords"
+require 'shellwords'
 require_relative '../lib/synchronizer.rb'
 
 usage = $PROGRAM_NAME + ": Usage: signage.rb SERVER_URL [SERIAL]"
@@ -70,5 +70,5 @@ while true
 
   current_schedule = synchronizer.sync
 
-  sleep [current_schedule['check_after'] || 7200 , 43200].min
+  sleep current_schedule['check_after']
 end
