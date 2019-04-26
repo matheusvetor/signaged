@@ -63,6 +63,8 @@ if command_seq.empty?
 end
 
 while !should_end
+  %x(fbi -T 2 -reset > /dev/null 2>&1)
+
   command_seq.each do |it|
     case it.type
     when "video"
