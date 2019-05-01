@@ -3,26 +3,15 @@
 require 'shellwords'
 require_relative '../lib/synchronizer.rb'
 
-usage = $PROGRAM_NAME + ": Usage: signage.rb SERVER_URL [SERIAL]"
-
 # The production server address
 SERVER = begin
-           if ARGV[0]
-             ARGV[0]
-           else
-             puts $PROGRAM_NAME + ": error: Invalid server URL"
-             puts usage
-             exit 1
-           end
+           return 'http://staging.tvopen.com.br' unless ENV['SERVER_NAME'].present?
+           ENV['SERVER_NAME']
          end
 
 # This machine's identification
 SERIAL = begin
-           if ARGV[1]
-             ARGV[1]
-           else
-             exec "cat /proc/cpuinfo | grep Serial | cut -d' ' -f2"
-           end
+           exec "cat /proc/cpuinfo | grep Serial | cut -d' ' -f2"
          end
 
 # Get the expanded base directory

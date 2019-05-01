@@ -63,7 +63,7 @@ if command_seq.empty?
 end
 
 while !should_end
-  %x(fbi -T 2 -reset > /dev/null 2>&1)
+  %x(fbi -T 2 -reset)
 
   command_seq.each do |it|
     case it.type

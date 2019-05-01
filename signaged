@@ -13,8 +13,6 @@
 PATH=/usr/local/bin:$PATH
 
 signaged_home="/home/pi/signaged"
-signaged_server="http://staging.tvopen.com.br"
-machine_serial=$(grep -i serial /proc/cpuinfo | cut -d : -f2)
 
 pid_file="/var/run/signage.pid"
 
@@ -36,7 +34,8 @@ function start() {
         echo "Starting signaged ..."
         fbi -T 2 -reset
         fbi -T 2 -a -noverbose $signaged_home/assets/images/loading.png
-        $signaged_home/bin/signaged.rb $signaged_server $machine_serial & echo $! > "$pid_file"
+        fbi -T 2 -reset
+        $signaged_home/bin/signaged.rb & echo $! > "$pid_file"
     fi
 }
 
