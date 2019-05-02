@@ -4,18 +4,14 @@ require 'shellwords'
 require_relative '../lib/synchronizer.rb'
 
 # The production server address
-SERVER = begin
-           if ENV['SERVER_NAME'].nil?
-             'http://staging.tvopen.com.br'
-           else
-             ENV['SERVER_NAME']
-           end
+SERVER = if ENV['SERVER_NAME'].nil?
+           'http://staging.tvopen.com.br'
+         else
+           ENV['SERVER_NAME']
          end
 
 # This machine's identification
-SERIAL = begin
-           system("cat /proc/cpuinfo | grep Serial | cut -d' ' -f2")
-         end
+SERIAL = `cat /proc/cpuinfo | grep Serial | cut -d' ' -f2`.gsub!(/[^0-9A-Za-z]/, '')
 
 # Get the expanded base directory
 base_dir = File.expand_path(File.dirname(__FILE__))
