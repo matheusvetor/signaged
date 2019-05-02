@@ -5,7 +5,7 @@ require_relative '../lib/synchronizer.rb'
 
 # The production server address
 SERVER = begin
-           return 'http://staging.tvopen.com.br' unless ENV['SERVER_NAME'].present?
+           return 'http://staging.tvopen.com.br' if ENV['SERVER_NAME'].nil?
            ENV['SERVER_NAME']
          end
 
