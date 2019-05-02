@@ -5,13 +5,16 @@ require_relative '../lib/synchronizer.rb'
 
 # The production server address
 SERVER = begin
-           return 'http://staging.tvopen.com.br' if ENV['SERVER_NAME'].nil?
-           ENV['SERVER_NAME']
+           if ENV['SERVER_NAME'].nil?
+             'http://staging.tvopen.com.br'
+           else
+             ENV['SERVER_NAME']
+           end
          end
 
 # This machine's identification
 SERIAL = begin
-           exec "cat /proc/cpuinfo | grep Serial | cut -d' ' -f2"
+           system("cat /proc/cpuinfo | grep Serial | cut -d' ' -f2")
          end
 
 # Get the expanded base directory
