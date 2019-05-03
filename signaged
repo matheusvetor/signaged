@@ -35,7 +35,7 @@ function start() {
         fbi -T 2 -reset
         fbi -T 2 -a -noverbose $signaged_home/assets/images/loading.png
         fbi -T 2 -reset
-        $signaged_home/bin/signaged.rb & echo $! > "$pid_file"
+        cd $signaged_home && bin/signaged.rb & echo $! > "$pid_file"
     fi
 }
 
