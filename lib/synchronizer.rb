@@ -42,7 +42,7 @@ class Loadable
   def download
     if @can_download && !File.exist?(file_path)
       begin
-        tmp_file_path = "download.#{rand(1000000)}"
+        tmp_file_path = "/home/pi/signaged/tmp/download.#{rand(1000000)}"
         tmp_file = File.open(tmp_file_path, 'wb')
         tmp_file.write(response.body)
         tmp_file.close
