@@ -41,11 +41,15 @@ class Loadable
 
   def download
     if @can_download && !File.exist?(file_path)
-      tmp_file_path = 'download.' + rand(1000000).to_s
-      tmp_file = File.open(tmp_file_path, "wb")
-      tmp_file.write(response.body)
-      tmp_file.close
-      FileUtils.move(tmp_file_path, file_path)
+      begin
+        tmp_file_path = "tmp/download.#{rand(1000000)}"
+        tmp_file = File.open(tmp_file_path, 'wb')
+        tmp_file.write(response.body)
+        tmp_file.close
+        FileUtils.move(tmp_file_path, file_path)
+      rescue
+        raise "Can't download #{file_path}"
+      end
     end
   end
 end
@@ -180,7 +184,7 @@ class Synchronizer
       file.close
       parsed_json
     rescue
-      raise "Can't download JSON items no find the local file"
+      raise "Can't download JSON items. No find the local file"
     end
   end
 
