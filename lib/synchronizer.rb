@@ -48,7 +48,7 @@ class Loadable
         tmp_file.close
         FileUtils.move(tmp_file_path, file_path)
       rescue
-        raise "Can't download #{file_path}"
+        puts "Can't download #{file_path}"
       end
     end
   end
@@ -184,7 +184,7 @@ class Synchronizer
       file.close
       parsed_json
     rescue
-      raise "Can't download JSON items. No find the local file"
+      puts "Can't download JSON items. No find the local file"
     end
   end
 
