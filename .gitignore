@@ -46,6 +46,8 @@ Temporary Items
 *.swo
 tags
 
+.env
+
 downloads/*
 *.o
 support/fbi-2.07/mk/*.dep
