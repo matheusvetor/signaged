@@ -1,7 +1,10 @@
 #!/usr/bin/env ruby
 
 require 'shellwords'
+require 'dotenv'
 require_relative '../lib/synchronizer.rb'
+
+Dotenv.load
 
 # The production server address
 SERVER = if ENV['SERVER_NAME'].nil?
