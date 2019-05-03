@@ -48,6 +48,8 @@ tags
 
 .env
 
+download.*
+
 downloads/*
 *.o
 support/fbi-2.07/mk/*.dep
