@@ -41,15 +41,21 @@ class Loadable
 
   def download
     if @can_download && !File.exist?(file_path)
-      begin
-        tmp_file_path = "download.#{rand(1000000)}"
-        tmp_file = File.open(tmp_file_path, 'wb')
-        tmp_file.write(response.body)
-        tmp_file.close
-        FileUtils.move(tmp_file_path, file_path)
-      rescue
-        puts "Can't download #{file_path}"
-      end
+      process_download
+    end
+  end
+
+  private
+
+  def process_download
+    begin
+      tmp_file_path = "download.#{rand(1000000)}"
+      tmp_file = File.open(tmp_file_path, 'wb')
+      tmp_file.write(response.body)
+      tmp_file.close
+      FileUtils.move(tmp_file_path, file_path)
+    rescue
+      puts "Can't download #{file_path}"
     end
   end
 end
@@ -57,10 +63,21 @@ end
 class Video < Loadable
   attr_reader :type, :url, :allowed_audio
 
-  def initialize(url, impress_url, allowed_audio)
+  def initialize(url, impress_url, allowed_audio, checksum)
     super(url, impress_url)
     @type = 'video'
     @allowed_audio = allowed_audio
+    @checksum  = checksum
+  end
+
+  def download
+    if File.exist?(file_path)
+      @digest = Digest::SHA512.hexdigest(File.read(file_path))
+    end
+
+    if (@can_download && !File.exist?(file_path)) || !@digest.eql?(@checksum)
+      process_download
+    end
   end
 end
 
@@ -104,7 +121,8 @@ class Schedule
       item = case item['type']
              when 'video'
                allowed_audio = item['allowed_audio']
-               Video.new(url, impress_url, allowed_audio)
+               checksum = item['checksum']
+               Video.new(url, impress_url, allowed_audio, checksum)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)
@@ -222,7 +240,8 @@ network={
       _item = case item['type']
              when 'video'
                allowed_audio = item['allowed_audio']
-               Video.new(url, impress_url, allowed_audio)
+               checksum = item['checksum']
+               Video.new(url, impress_url, allowed_audio, checksum)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)
