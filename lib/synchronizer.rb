@@ -4,6 +4,7 @@ require 'rubygems'
 require 'net/http'
 require 'json'
 require 'tempfile'
+require 'digest'
 
 class Loadable
   attr_reader :impress_url, :can_download
