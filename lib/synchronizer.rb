@@ -77,7 +77,7 @@ class Video < Loadable
     end
 
     process_download if @can_download && !File.exist?(file_path)
-    process_download @digest && !@digest.eql?(@checksum)
+    process_download if @digest && !@digest.eql?(@checksum)
   end
 end
 
