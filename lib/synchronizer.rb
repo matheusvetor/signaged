@@ -76,9 +76,8 @@ class Video < Loadable
       @digest = Digest::SHA512.hexdigest(File.read(file_path))
     end
 
-    if (@can_download && !File.exist?(file_path)) || !@digest.eql?(@checksum)
-      process_download
-    end
+    process_download if @can_download && !File.exist?(file_path)
+    process_download @digest && !@digest.eql?(@checksum)
   end
 end
 
