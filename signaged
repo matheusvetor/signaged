@@ -25,11 +25,17 @@ function running() {
     fi
 }
 
+function auth_unit() {
+  echo "Auth Unit"
+  /usr/local/bin/casperjs "$signaged_home/autologin/app.js"
+}
+
 function start() {
     if running
     then
         echo "signaged is already running"
     else
+        auth_unit
         sleep 15
         echo "Starting signaged ..."
         fbi -T 2 -reset
