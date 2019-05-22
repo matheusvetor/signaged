@@ -22,6 +22,7 @@ logger.info('Started signaged player.')
 
 # Get the expanded base directory
 base_dir = File.expand_path(File.dirname(__FILE__))
+$content_dir = "#{base_dir}/../downloads"
 
 synchronizer = Synchronizer.new(SERVER, SERIAL)
 current_schedule = synchronizer.get_local_json
