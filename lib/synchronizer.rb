@@ -190,15 +190,16 @@ class Synchronizer
 
       parsed_json
     rescue
-      get_local_json(true)
+      get_local_json
     end
   end
 
-  def get_local_json(do_rescue = false)
-    return false unless do_rescue && File.exist?("#{$content_dir}/#{@serial}.json")
+  def get_local_json
+    filename = "#{$content_dir}/#{@serial}.json"
+    return false unless File.exist?(filename)
 
     begin
-      file = File.open("#{$content_dir}/#{@serial}.json")
+      file = File.open(filename)
       parsed_json = JSON.parse(file.read)
       file.close
       parsed_json

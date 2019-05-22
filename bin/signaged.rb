@@ -21,14 +21,21 @@ SERIAL = `cat /proc/cpuinfo | grep Serial | cut -d' ' -f2`.gsub!(/[^0-9A-Za-z]/,
 # Get the expanded base directory
 base_dir = File.expand_path(File.dirname(__FILE__))
 
-content_dir = "#{base_dir}/../downloads"
-logger.info("Started Signaged - Using content dir #{content_dir}")
+$content_dir = "#{base_dir}/../downloads"
+logger.info("Started Signaged - Using content dir #{$content_dir}")
 
 while true
   synchronizer = Synchronizer.new(SERVER, SERIAL)
   current_schedule = synchronizer.get_local_json
+
+  unless current_schedule
+    current_schedule = synchronizer.sync
+  end
+
   synchronizer.sync
   logger.info('Syncronized')
+
+  puts current_schedule
 
   sleep [current_schedule['check_after'], 150].max
 end
