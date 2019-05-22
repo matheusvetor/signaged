@@ -32,32 +32,6 @@ serialized_items = JSON.generate(current_schedule['items'])
 items = Schedule.parse_items(serialized_items)
 # Schedule.cleanup_unused_files(items)
 
-ScheduleRun = Struct.new(:type, :items)
-command_seq = []
-
-items.each do |it|
-  if command_seq.empty?
-    run = ScheduleRun.new
-    run.type = it.type
-    run.items = [it]
-    command_seq << run
-  else
-    if command_seq.last.type == it.type
-      command_seq.last.items << it
-    else
-      run = ScheduleRun.new
-      run.type = it.type
-      run.items = [it]
-      command_seq << run
-    end
-  end
-end
-
-logger.info('Schedule summary:')
-command_seq.each do |it|
-  logger.info("#{it.items.length} item(s) of type #{it.type}")
-end
-
 video_player_pid = -1
 image_player_pid = -1
 
@@ -68,35 +42,31 @@ end
 %x(fbi -T 2 -reset)
 
 while true
-  command_seq.each do |it|
-    case it.type
+  items.each do |item|
+    case item.type
     when 'video'
-      it.items.each do |video|
-        file_path = Shellwords.escape(video.file_path)
-        if File.exist?(file_path)
-          command = "omxplayer -o hdmi --no-keys -n -1 #{file_path} > /dev/null 2>&1"
-          command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if video.allowed_audio
-          logger.info("Signaged Player: spawn: #{command}")
-          video_player_pid = spawn(command)
-          video.send_impression
-          status = Process.waitpid2(video_player_pid)
+      file_path = Shellwords.escape(item.file_path)
+      if File.exist?(file_path)
+        command = "omxplayer -o hdmi --no-keys -n -1 #{file_path} > /dev/null 2>&1"
+        command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if item.allowed_audio
+        logger.info("Signaged Player: spawn: #{command}")
+        video_player_pid = spawn(command)
+        item.send_impression
+        status = Process.waitpid2(video_player_pid)
 
-          logger.info("Signaged Player: omxplayer finished: #{status[1]}")
-        end
+        logger.info("Signaged Player: omxplayer finished: #{status[1]}")
       end
     when 'article', 'widget', 'image'
-      it.items.each do |image|
-        file_path = Shellwords.escape(image.file_path)
-        if File.exist?(file_path)
-          command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
-          image_player_pid = spawn(command)
-          logger.info("Signaged Player: spawn: #{command}")
-          image.send_impression
-          sleep image.display_time
-          system("killall fbi")
+      file_path = Shellwords.escape(item.file_path)
+      if File.exist?(file_path)
+        command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
+        image_player_pid = spawn(command)
+        logger.info("Signaged Player: spawn: #{command}")
+        item.send_impression
+        sleep item.display_time
+        system("killall fbi")
 
-          logger.info("Signaged Player: fbi probably killed")
-        end
+        logger.info("Signaged Player: fbi probably killed")
       end
     end
   end
