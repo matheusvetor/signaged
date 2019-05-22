@@ -35,7 +35,7 @@ items = Schedule.parse_items(serialized_items)
 video_player_pid = -1
 image_player_pid = -1
 
-if command_seq.empty?
+if items.empty?
   %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
 end
 
