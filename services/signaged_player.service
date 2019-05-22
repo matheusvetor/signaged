@@ -1,0 +1,14 @@
+[Unit]
+Description=Signaged Player Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pi
+ExecStart=/usr/local/bin/ruby  /home/pi/signaged/bin/signaged_player.rb
+
+[Install]
+WantedBy=multi-user.target

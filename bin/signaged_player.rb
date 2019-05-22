@@ -1,24 +1,32 @@
 #!/usr/bin/env ruby
 
 require 'shellwords'
+require 'dotenv'
+require 'logger'
 require_relative '../lib/synchronizer.rb'
 
-serialized_items = ARGV[0]
-if !serialized_items
-  puts $PROGRAM_NAME + ": Usage: signaged_player.rb [ITEMS_JSON]"
-  exit(1)
-end
+Dotenv.load
+logger = Logger.new('/home/pi/signaged/logs/signaged_player.log', 5, 100000000)
 
-puts $PROGRAM_NAME + ": Started signaged player."
+# The production server address
+SERVER = if ENV['SERVER_NAME'].nil?
+           'http://staging.tvopen.com.br'
+         else
+           ENV['SERVER_NAME']
+         end
+
+# This machine's identification
+SERIAL = `cat /proc/cpuinfo | grep Serial | cut -d' ' -f2`.gsub!(/[^0-9A-Za-z]/, '')
+
+logger.info('Started signaged player.')
 
 # Get the expanded base directory
 base_dir = File.expand_path(File.dirname(__FILE__))
 
-$content_dir = "#{base_dir}/../downloads"
+synchronizer = Synchronizer.new(SERVER, SERIAL)
+current_schedule = synchronizer.get_local_json
 
-File.open("#{$content_dir}/signaged_player.pid", "wb") do |file|
-  file.write(Process.pid)
-end
+serialized_items = Shellwords.escape JSON.generate(current_schedule['items'])
 
 items = Schedule.parse_items(serialized_items)
 # Schedule.cleanup_unused_files(items)
@@ -44,66 +52,49 @@ items.each do |it|
   end
 end
 
-puts $PROGRAM_NAME + ": schedule summary:"
+logger.info('Schedule summary:')
 command_seq.each do |it|
-  puts $PROGRAM_NAME + ": " + it.items.length.to_s + " item(s) of type " + it.type
+  logger.info("#{it.items.length} item(s) of type #{it.type}")
 end
 
 video_player_pid = -1
 image_player_pid = -1
-should_end = false
-
-Signal.trap("TERM") do
-  puts "Terminating Player"
-  should_end = true
-end
 
 if command_seq.empty?
   %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
 end
 
-while !should_end
+while true
   %x(fbi -T 2 -reset)
 
   command_seq.each do |it|
     case it.type
-    when "video"
+    when 'video'
       it.items.each do |video|
         file_path = Shellwords.escape(video.file_path)
         if File.exist?(file_path)
           command = "omxplayer -o hdmi --no-keys -n -1 #{file_path} > /dev/null 2>&1"
           command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if video.allowed_audio
-          puts "#{$PROGRAM_NAME}: spawn: #{command}"
+          logger.info("Signaged Player: spawn: #{command}")
           video_player_pid = spawn(command)
           video.send_impression
           status = Process.waitpid2(video_player_pid)
-          puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
+
+          logger.info("Signaged Player: omxplayer finished: #{status[1]}")
         end
       end
-    when "image"
+    when 'article', 'widget', 'image'
       it.items.each do |image|
         file_path = Shellwords.escape(image.file_path)
         if File.exist?(file_path)
           command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
           image_player_pid = spawn(command)
-          puts "#{$PROGRAM_NAME}: spawn: #{command}"
+          logger.info("Signaged Player: spawn: #{command}")
           image.send_impression
           sleep image.display_time
           system("killall fbi")
-          puts "#{$PROGRAM_NAME}: fbi probably killed"
-        end
-      end
-    when "article", "widget"
-      it.items.each do |article|
-        file_path = Shellwords.escape(article.file_path)
-        if File.exist?(file_path)
-          command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
-          image_player_pid = spawn(command)
-          puts "#{$PROGRAM_NAME}: spawn: #{command}"
-          article.send_impression
-          sleep article.display_time
-          system("killall fbi")
-          puts "#{$PROGRAM_NAME}: fbi probably killed"
+
+          logger.info("Signaged Player: fbi probably killed")
         end
       end
     end
