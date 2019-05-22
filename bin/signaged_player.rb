@@ -25,23 +25,23 @@ base_dir = File.expand_path(File.dirname(__FILE__))
 $content_dir = "#{base_dir}/../downloads"
 
 synchronizer = Synchronizer.new(SERVER, SERIAL)
-current_schedule = synchronizer.get_local_json
-
-serialized_items = JSON.generate(current_schedule['items'])
-
-items = Schedule.parse_items(serialized_items)
-# Schedule.cleanup_unused_files(items)
-
-video_player_pid = -1
-image_player_pid = -1
-
-if items.empty?
-  %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
-end
 
 %x(fbi -T 2 -reset)
 
 while true
+  current_schedule = synchronizer.get_local_json
+
+  serialized_items = JSON.generate(current_schedule['items'])
+
+  items = Schedule.parse_items(serialized_items)
+
+  video_player_pid = -1
+  image_player_pid = -1
+
+  if items.empty?
+    %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
+  end
+
   items.each do |item|
     case item.type
     when 'video'
