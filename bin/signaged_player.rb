@@ -27,7 +27,7 @@ $content_dir = "#{base_dir}/../downloads"
 synchronizer = Synchronizer.new(SERVER, SERIAL)
 current_schedule = synchronizer.get_local_json
 
-serialized_items = Shellwords.escape JSON.generate(current_schedule['items'])
+serialized_items = JSON.generate(current_schedule['items'])
 
 items = Schedule.parse_items(serialized_items)
 # Schedule.cleanup_unused_files(items)
@@ -65,9 +65,9 @@ if command_seq.empty?
   %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
 end
 
-while true
-  %x(fbi -T 2 -reset)
+%x(fbi -T 2 -reset)
 
+while true
   command_seq.each do |it|
     case it.type
     when 'video'
