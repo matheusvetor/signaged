@@ -62,12 +62,12 @@ class Loadable
 end
 
 class Video < Loadable
-  attr_reader :type, :url, :allowed_audio
+  attr_reader :type, :url, :audio_enabled
 
-  def initialize(url, impress_url, allowed_audio, checksum)
+  def initialize(url, impress_url, audio_enabled, checksum)
     super(url, impress_url)
     @type = 'video'
-    @allowed_audio = allowed_audio
+    @audio_enabled = audio_enabled
     @checksum  = checksum
   end
 
@@ -121,9 +121,9 @@ class Schedule
       impress_url = item['impress_url']
       item = case item['type']
              when 'video'
-               allowed_audio = item['allowed_audio']
+               audio_enabled = item['audio_enabled']
                checksum = item['checksum']
-               Video.new(url, impress_url, allowed_audio, checksum)
+               Video.new(url, impress_url, audio_enabled, checksum)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)
@@ -241,9 +241,9 @@ network={
       impress_url = item['impress_url']
       _item = case item['type']
              when 'video'
-               allowed_audio = item['allowed_audio']
+               audio_enabled = item['audio_enabled']
                checksum = item['checksum']
-               Video.new(url, impress_url, allowed_audio, checksum)
+               Video.new(url, impress_url, audio_enabled, checksum)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)

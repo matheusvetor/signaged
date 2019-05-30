@@ -50,13 +50,10 @@ while true
   items.each do |item|
     case item.type
     when 'video'
-      logger.info('Signaged - Starting video.')
-      logger.info('###########################')
-      logger.info('###########################')
       file_path = Shellwords.escape(item.file_path)
       if File.exist?(file_path)
         command = "omxplayer -o hdmi --no-keys -n -1 #{file_path} > /dev/null 2>&1"
-        command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if item.allowed_audio
+        command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if item.audio_enabled
         logger.info("Signaged Player: spawn: #{command}")
         video_player_pid = spawn(command)
         item.send_impression
@@ -66,8 +63,6 @@ while true
       end
     when 'article', 'widget', 'image'
       logger.info('Signaged - Starting image.')
-      logger.info('###########################')
-      logger.info('###########################')
       file_path = Shellwords.escape(item.file_path)
       if File.exist?(file_path)
         command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
