@@ -19,6 +19,8 @@ SERVER = if ENV['SERVER_NAME'].nil?
 SERIAL = `cat /proc/cpuinfo | grep Serial | cut -d' ' -f2`.gsub!(/[^0-9A-Za-z]/, '')
 
 logger.info('Started signaged player.')
+logger.info('###########################')
+logger.info('###########################')
 
 # Get the expanded base directory
 base_dir = File.expand_path(File.dirname(__FILE__))
@@ -29,6 +31,9 @@ synchronizer = Synchronizer.new(SERVER, SERIAL)
 %x(fbi -T 2 -reset)
 
 while true
+  logger.info('Signaged - Starting loop.')
+  logger.info('###########################')
+  logger.info('###########################')
   current_schedule = synchronizer.get_local_json
 
   serialized_items = JSON.generate(current_schedule['items'])
@@ -45,6 +50,9 @@ while true
   items.each do |item|
     case item.type
     when 'video'
+      logger.info('Signaged - Starting video.')
+      logger.info('###########################')
+      logger.info('###########################')
       file_path = Shellwords.escape(item.file_path)
       if File.exist?(file_path)
         command = "omxplayer -o hdmi --no-keys -n -1 #{file_path} > /dev/null 2>&1"
@@ -57,6 +65,9 @@ while true
         logger.info("Signaged Player: omxplayer finished: #{status[1]}")
       end
     when 'article', 'widget', 'image'
+      logger.info('Signaged - Starting image.')
+      logger.info('###########################')
+      logger.info('###########################')
       file_path = Shellwords.escape(item.file_path)
       if File.exist?(file_path)
         command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
@@ -64,9 +75,10 @@ while true
         logger.info("Signaged Player: spawn: #{command}")
         item.send_impression
         sleep item.display_time
-        system("killall fbi")
+        # system("killall fbi")
+	%x(fbi -T 2 -reset)
 
-        logger.info("Signaged Player: fbi probably killed")
+        logger.info("Signaged Player: image finished")
       end
     end
   end

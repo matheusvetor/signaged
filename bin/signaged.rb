@@ -26,16 +26,9 @@ logger.info("Started Signaged - Using content dir #{$content_dir}")
 
 while true
   synchronizer = Synchronizer.new(SERVER, SERIAL)
-  current_schedule = synchronizer.get_local_json
 
-  unless current_schedule
-    current_schedule = synchronizer.sync
-  end
-
-  synchronizer.sync
+  current_schedule = synchronizer.sync
   logger.info('Syncronized')
-
-  puts current_schedule
 
   sleep [current_schedule['check_after'], 150].max
 end
