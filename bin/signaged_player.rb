@@ -75,7 +75,7 @@ while !should_end
           command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if video.allowed_audio
           puts "#{$PROGRAM_NAME}: spawn: #{command}"
           video_player_pid = spawn(command)
-          video.send_impression
+          # video.send_impression
           status = Process.waitpid2(video_player_pid)
           puts "#{$PROGRAM_NAME}: omxplayer finished: #{status[1]}"
         end
@@ -87,7 +87,7 @@ while !should_end
           command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
           image_player_pid = spawn(command)
           puts "#{$PROGRAM_NAME}: spawn: #{command}"
-          image.send_impression
+          # image.send_impression
           sleep image.display_time
           system("killall fbi")
           puts "#{$PROGRAM_NAME}: fbi probably killed"
@@ -100,7 +100,7 @@ while !should_end
           command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
           image_player_pid = spawn(command)
           puts "#{$PROGRAM_NAME}: spawn: #{command}"
-          article.send_impression
+          # article.send_impression
           sleep article.display_time
           system("killall fbi")
           puts "#{$PROGRAM_NAME}: fbi probably killed"
