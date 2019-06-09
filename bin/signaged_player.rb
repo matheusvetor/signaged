@@ -6,7 +6,7 @@ require 'logger'
 require_relative '../lib/synchronizer.rb'
 
 Dotenv.load
-logger = Logger.new('/home/pi/signaged/logs/signaged_player.log', 5, 100000000)
+logger = Logger.new('/home/pi/signaged/logs/signaged_player.log', 5, 100000)
 
 # The production server address
 SERVER = if ENV['SERVER_NAME'].nil?
@@ -44,7 +44,6 @@ while true
   end
 
   %x(fbi -T 2 -reset)
-  # system("killall curl")
 
   items.each do |item|
     case item.type

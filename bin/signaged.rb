@@ -6,7 +6,7 @@ require 'logger'
 require_relative '../lib/synchronizer.rb'
 
 Dotenv.load
-logger = Logger.new('/home/pi/signaged/logs/signaged.log', 5, 100000000)
+logger = Logger.new('/home/pi/signaged/logs/signaged.log', 5, 100000)
 
 # The production server address
 SERVER = if ENV['SERVER_NAME'].nil?

@@ -1,5 +1,5 @@
 [Unit]
-Description=Update Signaged Service
+Description=Auth Unit Service
 After=network.target
 StartLimitIntervalSec=0
 
@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=pi
-ExecStart=/usr/local/bin/ruby  /home/pi/signaged/bin/git_update.rb
+ExecStart=/usr/local/bin/ruby  /home/pi/signaged/bin/auth_unit.rb
 
 [Install]
 WantedBy=multi-user.target
