@@ -19,8 +19,6 @@ SERVER = if ENV['SERVER_NAME'].nil?
 SERIAL = `cat /proc/cpuinfo | grep Serial | cut -d' ' -f2`.gsub!(/[^0-9A-Za-z]/, '')
 
 logger.info('Started signaged player.')
-logger.info('###########################')
-logger.info('###########################')
 
 # Get the expanded base directory
 base_dir = File.expand_path(File.dirname(__FILE__))
@@ -32,8 +30,6 @@ synchronizer = Synchronizer.new(SERVER, SERIAL)
 
 while true
   logger.info('Signaged - Starting loop.')
-  logger.info('###########################')
-  logger.info('###########################')
   current_schedule = synchronizer.get_local_json
 
   serialized_items = JSON.generate(current_schedule['items'])
@@ -47,6 +43,9 @@ while true
     %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
   end
 
+  %x(fbi -T 2 -reset)
+  # system("killall curl")
+
   items.each do |item|
     case item.type
     when 'video'
@@ -56,7 +55,7 @@ while true
         command = "omxplayer -o hdmi --no-keys #{file_path} > /dev/null 2>&1" if item.audio_enabled
         logger.info("Signaged Player: spawn: #{command}")
         video_player_pid = spawn(command)
-        item.send_impression
+        # item.send_impression
         status = Process.waitpid2(video_player_pid)
 
         logger.info("Signaged Player: omxplayer finished: #{status[1]}")
@@ -68,10 +67,9 @@ while true
         command = "fbi -T 2 -a -noverbose #{file_path} > /dev/null 2>&1"
         image_player_pid = spawn(command)
         logger.info("Signaged Player: spawn: #{command}")
-        item.send_impression
+        # item.send_impression
         sleep item.display_time
-        # system("killall fbi")
-	%x(fbi -T 2 -reset)
+        system("killall fbi")
 
         logger.info("Signaged Player: image finished")
       end
