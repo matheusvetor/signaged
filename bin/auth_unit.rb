@@ -13,5 +13,6 @@ while true
   else
     logger.info("No need to connect into unit network")
   end
+
   sleep 21600
 end
