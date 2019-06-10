@@ -1,0 +1,14 @@
+[Unit]
+Description=Update Signaged Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=pi
+ExecStart=/usr/local/bin/ruby  /home/pi/signaged/bin/git_update.rb
+
+[Install]
+WantedBy=multi-user.target

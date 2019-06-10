@@ -2,17 +2,15 @@
 install-on-pi:
 
     # Install Ruby
-    wget https://cache.ruby-lang.org/pub/ruby/2.5/ruby-2.5.2.tar.gz
-    tar -xzvf ruby-2.5.2.tar.gz
-    cd ruby-2.5.2/
+    wget https://cache.ruby-lang.org/pub/ruby/2.6/ruby-2.6.3.tar.gz
+    tar -xzvf ruby-2.6.3.tar.gz
+    cd ruby-2.6.3/
     ./configure
     make
     sudo make install
 
     sudo apt-get build-dep fbi
-    sudo apt-get install imagemagick
-    sudo apt-get install ffmpeg
-    sudo apt-get install --reinstall ttf-mscorefonts-installer
+    sudo apt-get install libjpeg8-dev
 
     # Copy fbi
     sudo cp support/fbi /usr/bin

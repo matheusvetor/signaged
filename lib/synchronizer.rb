@@ -62,12 +62,12 @@ class Loadable
 end
 
 class Video < Loadable
-  attr_reader :type, :url, :allowed_audio
+  attr_reader :type, :url, :audio_enabled
 
-  def initialize(url, impress_url, allowed_audio, checksum)
+  def initialize(url, impress_url, audio_enabled, checksum)
     super(url, impress_url)
     @type = 'video'
-    @allowed_audio = allowed_audio
+    @audio_enabled = audio_enabled
     @checksum  = checksum
   end
 
@@ -121,9 +121,9 @@ class Schedule
       impress_url = item['impress_url']
       item = case item['type']
              when 'video'
-               allowed_audio = item['allowed_audio']
+               audio_enabled = item['audio_enabled']
                checksum = item['checksum']
-               Video.new(url, impress_url, allowed_audio, checksum)
+               Video.new(url, impress_url, audio_enabled, checksum)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)
@@ -190,15 +190,16 @@ class Synchronizer
 
       parsed_json
     rescue
-      get_local_json(true)
+      get_local_json
     end
   end
 
-  def get_local_json(do_rescue = false)
-    return false unless do_rescue && File.exist?("#{$content_dir}/#{@serial}.json")
+  def get_local_json
+    filename = "#{$content_dir}/#{@serial}.json"
+    return false unless File.exist?(filename)
 
     begin
-      file = File.open("#{$content_dir}/#{@serial}.json")
+      file = File.open(filename)
       parsed_json = JSON.parse(file.read)
       file.close
       parsed_json
@@ -240,9 +241,9 @@ network={
       impress_url = item['impress_url']
       _item = case item['type']
              when 'video'
-               allowed_audio = item['allowed_audio']
+               audio_enabled = item['audio_enabled']
                checksum = item['checksum']
-               Video.new(url, impress_url, allowed_audio, checksum)
+               Video.new(url, impress_url, audio_enabled, checksum)
              when 'article'
                display_time = item['display_time']
                Article.new(url, impress_url, display_time)
