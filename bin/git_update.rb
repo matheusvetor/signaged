@@ -3,7 +3,7 @@
 require 'dotenv'
 require 'logger'
 
-Dotenv.load
+Dotenv.load('/home/pi/signaged/.env')
 logger = Logger.new('/home/pi/signaged/logs/git_update.log', 5, 100000)
 
 while true

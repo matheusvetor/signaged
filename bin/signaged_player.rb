@@ -5,7 +5,7 @@ require 'dotenv'
 require 'logger'
 require_relative '../lib/synchronizer.rb'
 
-Dotenv.load
+Dotenv.load('/home/pi/signaged/.env')
 logger = Logger.new('/home/pi/signaged/logs/signaged_player.log', 5, 100000)
 
 # The production server address
