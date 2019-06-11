@@ -44,6 +44,7 @@ while true
   end
 
   %x(fbi -T 2 -reset)
+  %x(killall fbi)
 
   items.each do |item|
     case item.type
@@ -68,9 +69,9 @@ while true
         logger.info("Signaged Player: spawn: #{command}")
         # item.send_impression
         sleep item.display_time
-        system("killall fbi")
+        system('killall fbi')
 
-        logger.info("Signaged Player: image finished")
+        logger.info('Signaged Player: image finished')
       end
     end
   end
