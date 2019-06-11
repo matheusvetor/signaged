@@ -27,6 +27,7 @@ $content_dir = "#{base_dir}/../downloads"
 synchronizer = Synchronizer.new(SERVER, SERIAL)
 
 %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/loading.png > /dev/null 2>&1)
+sleep 5
 
 while true
   logger.info('Signaged - Starting loop.')
