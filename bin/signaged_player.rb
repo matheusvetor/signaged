@@ -26,9 +26,6 @@ $content_dir = "#{base_dir}/../downloads"
 
 synchronizer = Synchronizer.new(SERVER, SERIAL)
 
-system("fbi -T 2 -a -noverbose #{base_dir}/../assets/images/loading.png > /dev/null 2>&1")
-sleep 5
-
 while true
   logger.info('Signaged - Starting loop.')
   current_schedule = synchronizer.get_local_json
@@ -40,12 +37,7 @@ while true
   video_player_pid = -1
   image_player_pid = -1
 
-  if items.empty?
-    system("fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1")
-  end
-
-  system('fbi -T 2 -reset')
-  system('killall fbi')
+  %x(fbi -T 2 -reset)
 
   items.each do |item|
     case item.type
