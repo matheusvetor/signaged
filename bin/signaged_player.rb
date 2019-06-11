@@ -26,11 +26,10 @@ $content_dir = "#{base_dir}/../downloads"
 
 synchronizer = Synchronizer.new(SERVER, SERIAL)
 
-%x(fbi -T 2 -reset)
+%x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/loading.png > /dev/null 2>&1)
 
 while true
   logger.info('Signaged - Starting loop.')
-  %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/loading.png > /dev/null 2>&1)
   current_schedule = synchronizer.get_local_json
 
   serialized_items = JSON.generate(current_schedule['items'])
