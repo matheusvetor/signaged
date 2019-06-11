@@ -26,7 +26,7 @@ $content_dir = "#{base_dir}/../downloads"
 
 synchronizer = Synchronizer.new(SERVER, SERIAL)
 
-%x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/loading.png > /dev/null 2>&1)
+system("fbi -T 2 -a -noverbose #{base_dir}/../assets/images/loading.png > /dev/null 2>&1")
 sleep 5
 
 while true
@@ -41,11 +41,11 @@ while true
   image_player_pid = -1
 
   if items.empty?
-    %x(fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1)
+    system("fbi -T 2 -a -noverbose #{base_dir}/../assets/images/no-content.png > /dev/null 2>&1")
   end
 
-  %x(fbi -T 2 -reset)
-  %x(killall fbi)
+  system('fbi -T 2 -reset')
+  system('killall fbi')
 
   items.each do |item|
     case item.type
