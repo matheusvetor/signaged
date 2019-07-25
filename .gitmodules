@@ -1,3 +1,0 @@
-[submodule "autologin"]
-	path = autologin
-	url = git@github.com:matheusvetor/autologin.git
