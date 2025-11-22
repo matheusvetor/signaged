@@ -5,6 +5,7 @@ require 'net/http'
 require 'json'
 require 'tempfile'
 require 'digest'
+require 'open-uri'
 
 class Loadable
   attr_reader :impress_url, :can_download
@@ -34,7 +35,8 @@ class Loadable
   def response
     puts "#{$PROGRAM_NAME}: Downloading file #{url.to_s} into #{file_path}"
     begin
-      Net::HTTP.get_response(@url)
+      open(@url).read
+      # Net::HTTP.get_response(@url)
     rescue
       @can_download = false
     end
@@ -174,7 +176,8 @@ class Synchronizer
 
   def response
     begin
-      Net::HTTP.get_response items_uri
+      open(items_uri).read
+      # Net::HTTP.get_response items_uri
     rescue
       @can_download = false
     end
