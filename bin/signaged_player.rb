@@ -33,6 +33,7 @@ while true
   serialized_items = JSON.generate(current_schedule['items'])
 
   items = Schedule.parse_items(serialized_items)
+  Schedule.cleanup_unused_files(items)
 
   video_player_pid = -1
   image_player_pid = -1
