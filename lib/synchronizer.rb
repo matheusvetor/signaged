@@ -156,7 +156,11 @@ class Schedule
     delete_video_files =    Dir.entries("/home/pi/signaged/downloads/video").reject   { |f| File.directory? f } - video_files.map(&:filename)
     delete_image_files =    Dir.entries("/home/pi/signaged/downloads/image").reject   { |f| File.directory? f } - image_files.map(&:filename)
 
-    FileUtils.rm(delete_article_files + delete_widget_files + delete_video_files + delete_image_files)
+    logger = Logger.new('/home/pi/signaged/logs/git_update.log', 5, 100000)
+
+    files_to_delete = delete_article_files + delete_widget_files + delete_video_files + delete_image_files
+    logger.info("Deleting files: #{files_to_delete}")
+    FileUtils.rm(files_to_delete)
   end
 end
 
