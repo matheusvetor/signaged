@@ -33,10 +33,10 @@ class Loadable
   end
 
   def response
-    puts "#{$PROGRAM_NAME}: Downloading file #{url.to_s} into #{file_path}"
+    puts "#{$PROGRAM_NAME}: Downloading file #{@url.to_s} into #{file_path}"
     begin
-      open(@url).read
-      # Net::HTTP.get_response(@url)
+      # open(@url).read
+      Net::HTTP.get_response(@url)
     rescue
       @can_download = false
     end
