@@ -151,16 +151,20 @@ class Schedule
     article_files.each { |item| article_png_files << "#{item.filename}.png" }
     widget_files.each  { |item| widget_png_files  << "#{item.filename}.png" }
 
-    delete_article_files =  Dir.entries("/home/pi/signaged/downloads/article").reject { |f| File.directory? f } - [article_png_files, article_files.map(&:filename)].flatten
-    delete_widget_files =   Dir.entries("/home/pi/signaged/downloads/widget").reject  { |f| File.directory? f } - [widget_png_files, widget_files.map(&:filename)].flatten
-    delete_video_files =    Dir.entries("/home/pi/signaged/downloads/video").reject   { |f| File.directory? f } - video_files.map(&:filename)
-    delete_image_files =    Dir.entries("/home/pi/signaged/downloads/image").reject   { |f| File.directory? f } - image_files.map(&:filename)
+    downloads_dir = '/home/pi/signaged/downloads'
+    delete_article_files = Dir.entries("#{downloads_dir}/article").reject { |f| File.directory?(File.join(downloads_dir, 'article', f)) } - [article_png_files, article_files.map(&:filename)].flatten - ['.gitkeep']
+    delete_widget_files = Dir.entries("#{downloads_dir}/widget").reject { |f| File.directory?(File.join(downloads_dir, 'widget', f)) } - [widget_png_files, widget_files.map(&:filename)].flatten - ['.gitkeep']
+    delete_video_files = Dir.entries("#{downloads_dir}/video").reject { |f| File.directory?(File.join(downloads_dir, 'video', f)) } - video_files.map(&:filename) - ['.gitkeep']
+    delete_image_files = Dir.entries("#{downloads_dir}/image").reject { |f| File.directory?(File.join(downloads_dir, 'image', f)) } - image_files.map(&:filename) - ['.gitkeep']
 
     logger = Logger.new('/home/pi/signaged/logs/delete_files.log', 5, 100000)
 
-    files_to_delete = delete_article_files + delete_widget_files + delete_video_files + delete_image_files
+    files_to_delete = (delete_article_files.map { |f| File.join(downloads_dir, 'article', f) } +
+               delete_widget_files.map { |f| File.join(downloads_dir, 'widget', f) } +
+               delete_video_files.map { |f| File.join(downloads_dir, 'video', f) } +
+               delete_image_files.map { |f| File.join(downloads_dir, 'image', f) })
     logger.info("Deleting files: #{files_to_delete}")
-    FileUtils.rm(files_to_delete)
+    FileUtils.rm(files_to_delete) unless files_to_delete.empty?
   end
 end
 
