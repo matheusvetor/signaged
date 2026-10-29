@@ -184,8 +184,8 @@ class Synchronizer
 
   def response
     begin
-      open(items_uri).read
-      # Net::HTTP.get_response items_uri
+      # open(items_uri).read
+      Net::HTTP.get_response items_uri
     rescue
       @can_download = false
     end
