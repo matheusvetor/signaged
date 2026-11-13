@@ -5,12 +5,12 @@ require 'logger'
 
 module AuthUnit
   def self.run
-    Dotenv.load('/home/pi/signaged/.env')
-    logger = Logger.new('/home/pi/signaged/logs/auth_unit.log', 5, 100000)
+    Dotenv.load('/home/tvopen/signaged/.env')
+    logger = Logger.new('/home/tvopen/signaged/logs/auth_unit.log', 5, 100000)
 
     while true
       if ENV['CONNECT_UNIT_WIFI'].eql?('true')
-        `/usr/local/bin/casperjs /home/pi/signaged/lib/auth_unit.js`
+        `/usr/local/bin/casperjs /home/tvopen/signaged/lib/auth_unit.js`
         logger.info("Trying to connect into unit network")
       else
         logger.info("No need to connect into unit network")

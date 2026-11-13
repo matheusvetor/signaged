@@ -23,7 +23,7 @@ RSpec.describe 'Signaged commands' do
       allow(ENV).to receive(:[]).with('CONNECT_UNIT_WIFI').and_return(connect)
       run_script(AuthUnit) do |receiver|
         if connect == 'true'
-          expect(receiver).to receive(:`).with('/usr/local/bin/casperjs /home/pi/signaged/lib/auth_unit.js')
+          expect(receiver).to receive(:`).with('/usr/local/bin/casperjs /home/tvopen/signaged/lib/auth_unit.js')
           expect(logger).to receive(:info).with('Trying to connect into unit network')
         else
           expect(logger).to receive(:info).with('No need to connect into unit network')
@@ -36,7 +36,7 @@ RSpec.describe 'Signaged commands' do
   it 'pulls the configured branch every five minutes' do
     allow(ENV).to receive(:[]).with('GIT_BRANCH').and_return('main')
     run_script(GitUpdate) do |receiver|
-      expect(receiver).to receive(:system).with('/usr/bin/git -C /home/pi/signaged pull origin main')
+      expect(receiver).to receive(:system).with('/usr/bin/git -C /home/tvopen/signaged pull origin main')
       expect(receiver).to receive(:sleep).with(300).and_raise(stop_loop)
     end
   end

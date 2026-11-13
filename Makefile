@@ -4,6 +4,8 @@ export LC_ALL := C
 RUBY_VERSION = 4.0.9
 RUBY_SHA256 = c35350682ff050b79702d57ade4516e7336063f510155d19fb2fb5b3f3909511
 
+PI_SERVICES := signaged.service signaged_player.service auth_unit.service git_update.service
+
 install-on-pi:
 
 	# Install Ruby and the runtime gems
@@ -20,13 +22,13 @@ install-on-pi:
 	sudo install -d /usr/local/bin
 	sudo install -m 0755 support/fbi-vetor/target/release/fbi /usr/local/bin/fbi
 
-	# Copy signaged to init.d
-	sudo rm -r -f /etc/init.d/signaged
-	sudo ln -s /home/pi/signaged/signaged /etc/init.d
+	$(MAKE) install-services-on-pi
 
-	# Add signaged to boot start
-	update-rc.d signaged start 30
+install-services-on-pi:
+	sudo install -m 0644 $(addprefix services/,$(PI_SERVICES)) /etc/systemd/system/
+	sudo systemctl daemon-reload
+	sudo systemctl enable $(PI_SERVICES)
 
 install: install-on-pi
 
-.PHONY: install install-on-pi
+.PHONY: install install-on-pi install-services-on-pi
