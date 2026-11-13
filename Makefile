@@ -1,3 +1,6 @@
+# Use a locale available even on minimal Raspberry Pi installations.
+export LC_ALL := C
+
 RUBY_VERSION = 4.0.9
 RUBY_SHA256 = c35350682ff050b79702d57ade4516e7336063f510155d19fb2fb5b3f3909511
 
