@@ -33,8 +33,7 @@ function start() {
         sleep 15
         echo "Starting signaged ..."
         fbi -T 2 -reset
-        fbi -T 2 -a -noverbose $signaged_home/assets/images/loading.png
-        fbi -T 2 -reset
+        fbi -T 2 -a -noverbose --once "$signaged_home/assets/images/loading.png"
         cd $signaged_home && bin/signaged.rb & echo $! > "$pid_file"
     fi
 }

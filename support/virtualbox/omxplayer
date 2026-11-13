@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Translate the OMXPlayer options used by Signaged into mpv options.
+options=(--no-config --vo=drm --sws-scaler=fast-bilinear --hwdec=no --framedrop=decoder+vo --no-terminal --no-input-default-bindings)
+while (($#)); do
+    case "$1" in
+        -o)
+            [[ ${2-} == hdmi ]] || exit 2
+            shift 2
+            ;;
+        --no-keys)
+            shift
+            ;;
+        -n)
+            [[ ${2-} == -1 ]] || exit 2
+            options+=(--no-audio)
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            printf 'omxplayer: opção não suportada: %s\n' "$1" >&2
+            exit 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if (($# != 1)); then
+    printf 'omxplayer: informe um arquivo de vídeo.\n' >&2
+    exit 2
+fi
+exec /usr/bin/mpv "${options[@]}" -- "$1"

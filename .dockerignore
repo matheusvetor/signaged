@@ -1,0 +1,10 @@
+*
+!Gemfile
+!Gemfile.lock
+!.rspec
+!bin/
+!bin/**
+!lib/
+!lib/**
+!spec/
+!spec/**

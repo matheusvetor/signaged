@@ -1,0 +1,7 @@
+services:
+  test:
+    platform: linux/amd64
+    build: .
+    command: ["bundle", "_2.4.22_", "exec", "rspec"]
+    volumes:
+      - ./coverage:/app/coverage

@@ -5,30 +5,33 @@ require 'dotenv'
 require 'logger'
 require_relative '../lib/synchronizer.rb'
 
-Dotenv.load('/home/pi/signaged/.env')
-logger = Logger.new('/home/pi/signaged/logs/signaged.log', 5, 100000)
+module SignagedSync
+  def self.run
+    Dotenv.load('/home/pi/signaged/.env')
+    logger = Logger.new('/home/pi/signaged/logs/signaged.log', 5, 100000)
 
-# The production server address
-SERVER = if ENV['SERVER_NAME'].nil?
-           'http://staging.tvopen.com.br'
-         else
-           ENV['SERVER_NAME']
-         end
+    server = ENV.fetch('SERVER_NAME', 'http://staging.tvopen.com.br')
 
-# This machine's identification
-SERIAL = `cat /proc/cpuinfo | grep Serial | cut -d' ' -f2`.gsub!(/[^0-9A-Za-z]/, '')
+    # This machine's identification
+    serial = ENV.fetch('SIGNAGED_SERIAL') do
+      `cat /proc/cpuinfo | grep Serial | cut -d' ' -f2`.gsub(/[^0-9A-Za-z]/, '')
+    end
 
-# Get the expanded base directory
-base_dir = File.expand_path(File.dirname(__FILE__))
+    # Get the expanded base directory
+    base_dir = File.expand_path(File.dirname(__FILE__))
 
-$content_dir = "#{base_dir}/../downloads"
-logger.info("Started Signaged - Using content dir #{$content_dir}")
+    $content_dir = "#{base_dir}/../downloads"
+    logger.info("Started Signaged - Using content dir #{$content_dir}")
 
-while true
-  synchronizer = Synchronizer.new(SERVER, SERIAL)
+    while true
+      synchronizer = Synchronizer.new(server, serial)
 
-  current_schedule = synchronizer.sync
-  logger.info('Syncronized')
+      current_schedule = synchronizer.sync
+      logger.info('Syncronized')
 
-  sleep [current_schedule['check_after'], 150].max
+      sleep [current_schedule['check_after'], 150].max
+    end
+  end
 end
+
+SignagedSync.run if $PROGRAM_NAME == __FILE__

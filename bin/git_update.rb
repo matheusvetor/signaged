@@ -3,13 +3,19 @@
 require 'dotenv'
 require 'logger'
 
-Dotenv.load('/home/pi/signaged/.env')
-logger = Logger.new('/home/pi/signaged/logs/git_update.log', 5, 100000)
+module GitUpdate
+  def self.run
+    Dotenv.load('/home/pi/signaged/.env')
+    logger = Logger.new('/home/pi/signaged/logs/git_update.log', 5, 100000)
 
-while true
-  command = "/usr/bin/git -C /home/pi/signaged pull origin #{ENV['GIT_BRANCH']}"
-  system(command)
-  logger.info("Trying to get code updates: #{command}")
+    while true
+      command = "/usr/bin/git -C /home/pi/signaged pull origin #{ENV['GIT_BRANCH']}"
+      system(command)
+      logger.info("Trying to get code updates: #{command}")
 
-  sleep 300
+      sleep 300
+    end
+  end
 end
+
+GitUpdate.run if $PROGRAM_NAME == __FILE__

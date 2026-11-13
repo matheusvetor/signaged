@@ -4,6 +4,7 @@ require 'rubygems'
 require 'net/http'
 require 'json'
 require 'tempfile'
+require 'fileutils'
 require 'digest'
 require 'open-uri'
 
@@ -245,7 +246,9 @@ network={
   def sync
     json = json_response
 
-    create_wifi_config(json['wifi_config']) unless json['wifi_config'].nil?
+    if json['wifi_config'] && ENV['SIGNAGED_MANAGE_WIFI'] != 'false'
+      create_wifi_config(json['wifi_config'])
+    end
 
     json['items'].each do |item|
       url = item['url']

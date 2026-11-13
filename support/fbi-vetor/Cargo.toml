@@ -1,0 +1,16 @@
+[package]
+name = "fbi-vetor"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "GPL-2.0-or-later"
+
+[[bin]]
+name = "fbi"
+path = "src/main.rs"
+
+[dependencies]
+image = { version = "=0.24.9", default-features = false, features = ["bmp", "jpeg", "png", "pnm"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
