@@ -4,7 +4,8 @@ export LC_ALL := C
 RUBY_VERSION = 4.0.9
 RUBY_SHA256 = c35350682ff050b79702d57ade4516e7336063f510155d19fb2fb5b3f3909511
 
-PI_SERVICES := signaged.service signaged_player.service auth_unit.service git_update.service
+# PI_SERVICES := signaged.service signaged_player.service auth_unit.service git_update.service
+PI_SERVICES := signaged.service signaged_player.service git_update.service
 
 install-on-pi:
 
