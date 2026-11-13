@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-project=/home/pi/signaged
+project=/home/tvopen/signaged
 : "${SIGNAGED_SERVER:=}" "${SIGNAGED_SERIAL:=virtualbox}"
 if [[ ! "$SIGNAGED_SERIAL" =~ ^[a-zA-Z0-9]+$ ]]; then
     printf 'SIGNAGED_SERIAL deve conter apenas letras e números.\n' >&2
@@ -11,18 +11,22 @@ if [[ -n "$SIGNAGED_SERVER" && ! "$SIGNAGED_SERVER" =~ ^https?://[^[:space:]#]+$
     printf 'SIGNAGED_SERVER deve ser uma URL HTTP ou HTTPS sem espaços ou fragmento.\n' >&2
     exit 1
 fi
-ruby_home=/opt/signaged/ruby-2.6.3
+ruby_version=4.0.9
+ruby_home="/opt/signaged/ruby-$ruby_version"
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
 apt-get install -y --no-install-recommends build-essential ca-certificates curl git \
-    libyaml-dev libreadline-dev zlib1g-dev libffi-dev libgdbm-dev psmisc python3 kbd mpv
+    libssl-dev libyaml-dev libreadline-dev zlib1g-dev libffi-dev libgdbm-dev psmisc python3 kbd mpv
 
 for unit in signaged_player signaged; do
     if [[ -f "/etc/systemd/system/$unit.service" ]]; then
         systemctl stop "$unit.service"
     fi
 done
+if ! id tvopen >/dev/null 2>&1; then
+    useradd --create-home --home-dir /home/tvopen --shell /bin/bash tvopen
+fi
 install -d "$project" "$project/logs"
 tar -xzf /tmp/signaged-vm.tar.gz --no-same-owner -C "$project"
 install -m 0755 "$project/support/virtualbox/omxplayer" /usr/local/bin/omxplayer
@@ -30,11 +34,11 @@ for kind in video article image widget; do
     install -d "$project/downloads/$kind"
 done
 
-if ! "$ruby_home/bin/ruby" -ropenssl -e 'exit(RUBY_VERSION == "2.6.3" ? 0 : 1)' 2>/dev/null; then
+if ! "$ruby_home/bin/ruby" -ropenssl -e 'exit(RUBY_VERSION == ARGV.first ? 0 : 1)' "$ruby_version" 2>/dev/null; then
     build_dir=$(mktemp -d)
     trap 'rm -rf "$build_dir"' EXIT
-    git clone --depth 1 --branch v20251203 https://github.com/rbenv/ruby-build.git "$build_dir/ruby-build"
-    RUBY_BUILD_VENDOR_OPENSSL=1 MAKE_OPTS=-j2 "$build_dir/ruby-build/bin/ruby-build" 2.6.3 "$ruby_home"
+    git clone --depth 1 --branch v20261023 https://github.com/rbenv/ruby-build.git "$build_dir/ruby-build"
+    MAKE_OPTS=-j2 "$build_dir/ruby-build/bin/ruby-build" "$ruby_version" "$ruby_home"
 fi
 ln -sfn "$ruby_home/bin/ruby" /usr/local/bin/ruby
 export PATH="$ruby_home/bin:$PATH"
@@ -104,13 +108,15 @@ for unit in signaged signaged_player; do
     systemctl unmask "$unit.service"
     install -m 0644 "$project/services/$unit.service" "/etc/systemd/system/$unit.service"
     install -d "/etc/systemd/system/$unit.service.d"
-    cat >"/etc/systemd/system/$unit.service.d/virtualbox.conf" <<'UNIT'
+    cat >"/etc/systemd/system/$unit.service.d/virtualbox.conf" <<UNIT
 [Unit]
 Wants=network-online.target
 After=network-online.target
 
 [Service]
-WorkingDirectory=/home/pi/signaged
+WorkingDirectory=$project
+ExecStart=
+ExecStart=/usr/local/bin/ruby $project/bin/$unit.rb
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 Environment=SIGNAGED_MANAGE_WIFI=false
 UNIT

@@ -7,8 +7,9 @@ require_relative '../lib/synchronizer.rb'
 
 module SignagedSync
   def self.run
-    Dotenv.load('/home/pi/signaged/.env')
-    logger = Logger.new('/home/pi/signaged/logs/signaged.log', 5, 100000)
+    project = File.expand_path('..', __dir__)
+    Dotenv.load(File.join(project, '.env'))
+    logger = Logger.new(File.join(project, 'logs', 'signaged.log'), 5, 100000)
 
     server = ENV.fetch('SERVER_NAME', 'http://staging.tvopen.com.br')
 

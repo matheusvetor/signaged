@@ -35,7 +35,8 @@ raiz do projeto:
 ```
 
 O script cria e inicia uma VM Ubuntu 24.04 com janela gráfica e provisiona
-Ruby 2.6.3, as gems do projeto e o `fbi-vetor`. O Vagrant seleciona a
+Ruby 4.0.9, as gems do projeto e o `fbi-vetor` em uma VM com a conta
+`tvopen` e o projeto em `/home/tvopen/signaged`. O Vagrant seleciona a
 arquitetura do host (ARM64 ou AMD64). Se precisar usar uma cópia da box
 Bento fora do catálogo padrão, passe a URL da box VirtualBox da arquitetura
 correta em `SIGNAGED_VM_BOX_URL`.

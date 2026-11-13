@@ -90,7 +90,7 @@ RSpec.describe Schedule do
 
   it 'removes only obsolete files and retains generated images for articles and widgets' do
     allow(Dir).to receive(:entries).and_call_original
-    downloads = '/home/pi/signaged/downloads'
+    downloads = File.expand_path('../downloads', __dir__)
     allow(File).to receive(:directory?).and_call_original
     removed = media.map do |item|
       installed = File.join(downloads, item.type)
@@ -107,7 +107,7 @@ RSpec.describe Schedule do
       File.join(installed, 'obsolete')
     end
     logger = instance_double(Logger, info: nil)
-    allow(Logger).to receive(:new).with('/home/pi/signaged/logs/delete_files.log', 5, 100000)
+    allow(Logger).to receive(:new).with(File.expand_path('../logs/delete_files.log', __dir__), 5, 100000)
       .and_return(logger)
     expect(FileUtils).to receive(:rm) do |paths|
       expect(paths).to match_array(removed)
