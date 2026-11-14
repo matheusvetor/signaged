@@ -29,7 +29,6 @@ if ! id tvopen >/dev/null 2>&1; then
 fi
 install -d "$project" "$project/logs"
 tar -xzf /tmp/signaged-vm.tar.gz --no-same-owner -C "$project"
-install -m 0755 "$project/support/virtualbox/omxplayer" /usr/local/bin/omxplayer
 for kind in video article image widget; do
     install -d "$project/downloads/$kind"
 done
@@ -47,18 +46,6 @@ gem list -i bundler -v 2.4.22 >/dev/null || gem install bundler -v 2.4.22 --no-d
     cd "$project"
     BUNDLE_FROZEN=true BUNDLE_WITHOUT=test bundle _2.4.22_ install
 )
-
-export RUSTUP_HOME=/opt/signaged/rustup CARGO_HOME=/opt/signaged/cargo
-export PATH="$CARGO_HOME/bin:$PATH"
-if ! command -v rustup >/dev/null; then
-    installer=$(mktemp)
-    curl -fsSL https://sh.rustup.rs -o "$installer"
-    sh "$installer" -y --profile minimal --default-toolchain 1.85.0 --no-modify-path
-    rm -f "$installer"
-fi
-make -C "$project/support/fbi-vetor" CARGO='cargo +1.85.0' test build
-install -D -m 0755 "$project/support/fbi-vetor/target/release/fbi" /usr/local/libexec/fbi-vetor
-install -m 0755 "$project/support/virtualbox/fbi" /usr/local/bin/fbi
 
 demo_enabled=false
 # Keep the demo available without registering a physical Raspberry Pi.
@@ -137,8 +124,6 @@ cat >>/etc/systemd/system/signaged_player.service.d/virtualbox.conf <<'UNIT'
 Wants=signaged.service
 After=signaged.service
 
-[Service]
-ExecStartPre=/usr/bin/chvt 2
 UNIT
 
 systemctl daemon-reload
@@ -147,14 +132,10 @@ if [[ "$demo_enabled" == true ]]; then
 elif systemctl is-enabled --quiet signaged-demo.service; then
     systemctl disable --now signaged-demo.service
 fi
-# Keep VT 2 available to the framebuffer player.
+# Keep VT 2 available for direct DRM output.
 systemctl mask --now getty@tty2.service
-if [[ ! -c /dev/fb0 ]]; then
-    modprobe vmwgfx || true
-    udevadm settle
-fi
-if [[ ! -c /dev/fb0 ]]; then
-    printf 'Aviso: /dev/fb0 ainda não está disponível no convidado.\n' >&2
+if ! compgen -G '/dev/dri/card*' >/dev/null; then
+    printf 'Aviso: nenhum dispositivo DRM/KMS está disponível no convidado.\n' >&2
 fi
 systemctl enable --now signaged.service signaged_player.service
 systemctl is-active signaged.service signaged_player.service

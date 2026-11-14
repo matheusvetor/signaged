@@ -35,7 +35,7 @@ raiz do projeto:
 ```
 
 O script cria e inicia uma VM Ubuntu 24.04 com janela gráfica e provisiona
-Ruby 4.0.9, as gems do projeto e o `fbi-vetor` em uma VM com a conta
+Ruby 4.0.9, as gems do projeto e o `mpv` em uma VM com a conta
 `tvopen` e o projeto em `/home/tvopen/signaged`. O Vagrant seleciona a
 arquitetura do host (ARM64 ou AMD64). Se precisar usar uma cópia da box
 Bento fora do catálogo padrão, passe a URL da box VirtualBox da arquitetura
@@ -43,11 +43,8 @@ correta em `SIGNAGED_VM_BOX_URL`.
 
 Por padrão, a VM serve uma programação local com a imagem de carregamento.
 `signaged.service` e `signaged_player.service` iniciam automaticamente no
-boot. A VM exibe imagens no VT 2 via mpv/DRM. O comando `fbi` da VM
-encaminha a limpeza do framebuffer ao binário Rust. A demo exercita imagens. Para vídeos, a VM instala o
-mpv e um comando de compatibilidade `omxplayer` em `/usr/local/bin`. O
-comando mantém as opções usadas pelo Signaged, incluindo a reprodução sem
-áudio. A saída de vídeo requer DRM/KMS no convidado.
+boot. O `mpv` exibe vídeos e imagens diretamente via DRM/KMS no VT 2.
+Quando a programação está vazia, o player exibe um quadro preto.
 
 Para usar um servidor e um dispositivo já cadastrados, configure o `.env`
 na raiz do projeto:
@@ -83,16 +80,29 @@ precisa ter acesso de leitura ao repositório para o checkout e as atualizaçõe
 
 Para uma VM já criada com Vagrant, use `signaged_platform: virtualbox` e
 consulte `vagrant ssh-config` para obter host, porta, usuário e chave.
-Para um Pi, use `signaged_platform: pi`. O player no Pi espera encontrar
-`omxplayer` no PATH para reproduzir vídeo.
+Para um Pi, use `signaged_platform: pi`. O player requer DRM/KMS para exibir conteúdo no console.
 
 ```sh
 ansible-playbook -i /caminho/inventory.yml deploy/ansible/deploy.yml --limit pi_sala
 ```
 
-O playbook instala Ruby 4.0.9 e Rust, clona a aplicação em
-`/home/tvopen/signaged`, compila e testa o `fbi-vetor` no destino e grava
+O playbook instala Ruby 4.0.9 e mpv, clona a aplicação em
+`/home/tvopen/signaged`, e grava
 o `.env` com os valores do inventário. Ele habilita e inicia
 `signaged.service`, `signaged_player.service` e `git_update.service`.
-A primeira execução pode demorar durante as compilações.
-A VM recebe também os comandos de compatibilidade com mpv/DRM.
+A primeira execução pode demorar durante a compilação do Ruby.
+
+### VM Debian 13 ARM64 para simular o ambiente do Raspberry Pi
+
+Em um host ARM64 com VirtualBox e Vagrant, execute na raiz:
+
+```sh
+./support/virtualbox/up.sh raspberry-pi
+vagrant ssh raspberry-pi -c 'cat /etc/os-release; dpkg --print-architecture; apt-cache policy mpv kbd'
+```
+
+A VM `raspberry-pi` é separada da VM Ubuntu e usa o mesmo provisionamento
+do Signaged. Ela usa Debian 13 ARM64 com os repositórios da box e o hardware
+gráfico virtual do VirtualBox. Use o Pi físico para validar aceleração,
+desempenho e saída HDMI. Para uma cópia externa da box Debian, configure
+`SIGNAGED_PI_BOX_URL`.

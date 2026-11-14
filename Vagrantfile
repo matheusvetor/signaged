@@ -16,13 +16,22 @@ server = ENV["SIGNAGED_SERVER"] || ENV["SERVER_NAME"] ||
          file_settings["SIGNAGED_SERVER"] || file_settings["SERVER_NAME"] || ""
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "bento/ubuntu-24.04"
-  config.vm.box_version = "202510.26.0"
-  config.vm.box_architecture = :auto
-  if settings["SIGNAGED_VM_BOX_URL"]
-    config.vm.box_url = settings.fetch("SIGNAGED_VM_BOX_URL")
+  config.vm.define "default", primary: true do |ubuntu|
+    ubuntu.vm.box = "bento/ubuntu-24.04"
+    ubuntu.vm.box_version = "202510.26.0"
+    ubuntu.vm.box_architecture = :auto
+    ubuntu.vm.hostname = "signaged"
+    ubuntu.vm.box_url = settings["SIGNAGED_VM_BOX_URL"] if settings["SIGNAGED_VM_BOX_URL"]
   end
-  config.vm.hostname = "signaged"
+
+  config.vm.define "raspberry-pi", autostart: false do |pi|
+    pi.vm.box = "bento/debian-13"
+    pi.vm.box_version = "202510.26.0"
+    pi.vm.box_architecture = "arm64"
+    pi.vm.hostname = "signaged-pi"
+    pi.vm.box_url = settings["SIGNAGED_PI_BOX_URL"] if settings["SIGNAGED_PI_BOX_URL"]
+  end
+
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
   config.vm.provider "virtualbox" do |vb|

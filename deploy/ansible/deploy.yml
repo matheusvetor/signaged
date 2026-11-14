@@ -4,7 +4,6 @@
   become: true
   serial: 1
   vars:
-    signaged_source: "{{ playbook_dir }}/../.."
     signaged_root: /home/tvopen/signaged
     ruby_version: "4.0.9"
     ruby_home: "/opt/signaged/ruby-{{ ruby_version }}"
@@ -26,7 +25,7 @@
 
     - name: Instalar dependências
       ansible.builtin.apt:
-        name: "{{ ['build-essential', 'ca-certificates', 'curl', 'git', 'libssl-dev', 'libyaml-dev', 'libreadline-dev', 'zlib1g-dev', 'libffi-dev', 'libgdbm-dev', 'kbd', 'psmisc', 'acl'] + (['mpv'] if signaged_platform == 'virtualbox' else []) }}"
+        name: "{{ ['build-essential', 'ca-certificates', 'curl', 'git', 'libssl-dev', 'libyaml-dev', 'libreadline-dev', 'zlib1g-dev', 'libffi-dev', 'libgdbm-dev', 'kbd', 'psmisc', 'acl', 'mpv'] }}"
         update_cache: true
         cache_valid_time: 3600
 
@@ -44,7 +43,6 @@
         mode: '0755'
       loop:
         - /opt/signaged
-        - /usr/local/libexec
         - "{{ signaged_root }}"
 
     - name: Verificar o Ruby com OpenSSL
@@ -116,28 +114,6 @@
         owner: tvopen
         state: directory
 
-    - name: Instalar Rust
-      ansible.builtin.shell: |
-        set -eu
-        installer=$(mktemp)
-        trap 'rm -f "$installer"' EXIT
-        curl -fsSL https://sh.rustup.rs -o "$installer"
-        sh "$installer" -y --profile minimal --default-toolchain 1.85.0 --no-modify-path
-      args:
-        creates: /opt/signaged/cargo/bin/rustup
-      environment: &rust_environment
-        CARGO_HOME: /opt/signaged/cargo
-        RUSTUP_HOME: /opt/signaged/rustup
-
-    - name: Compilar e testar fbi-vetor no destino
-      ansible.builtin.command:
-        cmd: /usr/bin/make CARGO="/opt/signaged/cargo/bin/cargo +1.85.0" TARGET_DIR=/opt/signaged/fbi-target test build
-        chdir: "{{ signaged_source_remote }}"
-      vars:
-        signaged_source_remote: "{{ signaged_root }}/support/fbi-vetor"
-      environment: *rust_environment
-      changed_when: false
-
     - name: Configurar o dispositivo
       ansible.builtin.copy:
         dest: "{{ signaged_root }}/.env"
@@ -147,25 +123,6 @@
           SERVER_NAME={{ signaged_server }}
           SIGNAGED_SERIAL='{{ signaged_serial }}'
       no_log: true
-      notify: Reiniciar serviços
-
-    - name: Instalar fbi-vetor
-      ansible.builtin.copy:
-        src: /opt/signaged/fbi-target/release/fbi
-        remote_src: true
-        dest: "{{ '/usr/local/libexec/fbi-vetor' if signaged_platform == 'virtualbox' else '/usr/local/bin/fbi' }}"
-        mode: '0755'
-      notify: Reiniciar serviços
-
-    - name: Instalar comandos DRM da VM
-      when: signaged_platform == 'virtualbox'
-      ansible.builtin.copy:
-        src: "{{ signaged_source }}/support/virtualbox/{{ item }}"
-        dest: "/usr/local/bin/{{ item }}"
-        mode: '0755'
-      loop:
-        - fbi
-        - omxplayer
       notify: Reiniciar serviços
 
     - name: Desmascarar unidades antes de copiar os arquivos
@@ -206,15 +163,11 @@
           Environment=PATH=/usr/local/bin:/usr/bin:/bin
           {% if signaged_platform == 'virtualbox' %}
           Environment=SIGNAGED_MANAGE_WIFI=false
-          {% if item == 'signaged_player' %}
-          ExecStartPre=/usr/bin/chvt 2
-          {% endif %}
           {% endif %}
       loop: "{{ signaged_units }}"
       notify: Reiniciar serviços
 
-    - name: Reservar VT 2 na VM
-      when: signaged_platform == 'virtualbox'
+    - name: Reservar VT 2 para o player
       ansible.builtin.systemd_service:
         name: getty@tty2.service
         masked: true
