@@ -11,13 +11,19 @@ if [[ -n "$SIGNAGED_SERVER" && ! "$SIGNAGED_SERVER" =~ ^https?://[^[:space:]#]+$
     printf 'SIGNAGED_SERVER deve ser uma URL HTTP ou HTTPS sem espaços ou fragmento.\n' >&2
     exit 1
 fi
+video_output=${SIGNAGED_VIDEO_OUTPUT:-mpv}
 ruby_version=4.0.9
 ruby_home="/opt/signaged/ruby-$ruby_version"
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update
 apt-get install -y --no-install-recommends build-essential ca-certificates curl git \
-    libssl-dev libyaml-dev libreadline-dev zlib1g-dev libffi-dev libgdbm-dev psmisc python3 kbd mpv
+    libssl-dev libyaml-dev libreadline-dev zlib1g-dev libffi-dev libgdbm-dev psmisc python3 kbd
+if [[ "$video_output" == vlc-fb ]]; then
+    apt-get install -y --no-install-recommends vlc-bin vlc-plugin-base vlc-plugin-video-output
+else
+    apt-get install -y --no-install-recommends mpv
+fi
 
 for unit in signaged_player signaged; do
     if [[ -f "/etc/systemd/system/$unit.service" ]]; then
@@ -29,6 +35,22 @@ if ! id tvopen >/dev/null 2>&1; then
 fi
 install -d "$project" "$project/logs"
 tar -xzf /tmp/signaged-vm.tar.gz --no-same-owner -C "$project"
+if [[ "$video_output" == vlc-fb ]]; then
+    export RUSTUP_HOME=/opt/signaged/rustup CARGO_HOME=/opt/signaged/cargo
+    if [[ ! -x "$CARGO_HOME/bin/rustup" ]]; then
+        installer=$(mktemp)
+        curl -fsSL https://sh.rustup.rs -o "$installer"
+        sh "$installer" -y --profile minimal --default-toolchain 1.85.0 --no-modify-path
+        rm -f "$installer"
+    fi
+    make -C "$project/support/fbi-vetor" CARGO="$CARGO_HOME/bin/cargo +1.85.0" build
+    install -D -m 0755 "$project/support/fbi-vetor/target/release/fbi" /usr/local/bin/fbi
+    usermod -aG video,audio tvopen
+    printf 'd /run/signaged-vlc 0700 tvopen - -\n' >/etc/tmpfiles.d/signaged-vlc.conf
+    systemd-tmpfiles --create /etc/tmpfiles.d/signaged-vlc.conf
+    install -m 0755 "$project/support/virtualbox/play-vlc" /usr/local/bin/signaged-play-vlc
+    install -m 0755 "$project/support/virtualbox/omxplayer" /usr/local/bin/
+fi
 for kind in video article image widget; do
     install -d "$project/downloads/$kind"
 done
@@ -106,6 +128,7 @@ ExecStart=
 ExecStart=/usr/local/bin/ruby $project/bin/$unit.rb
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 Environment=SIGNAGED_MANAGE_WIFI=false
+Environment=SIGNAGED_VIDEO_OUTPUT=$video_output
 UNIT
 done
 
@@ -126,6 +149,17 @@ After=signaged.service
 
 UNIT
 
+if [[ "$video_output" == vlc-fb ]]; then
+    cat >>/etc/systemd/system/signaged_player.service.d/virtualbox.conf <<'UNIT'
+
+[Service]
+StandardInput=tty
+TTYPath=/dev/tty2
+StandardOutput=journal
+StandardError=journal
+UNIT
+fi
+
 systemctl daemon-reload
 if [[ "$demo_enabled" == true ]]; then
     systemctl enable --now signaged-demo.service
@@ -134,7 +168,7 @@ elif systemctl is-enabled --quiet signaged-demo.service; then
 fi
 # Keep VT 2 available for direct DRM output.
 systemctl mask --now getty@tty2.service
-if ! compgen -G '/dev/dri/card*' >/dev/null; then
+if [[ "$video_output" == mpv ]] && ! compgen -G '/dev/dri/card*' >/dev/null; then
     printf 'Aviso: nenhum dispositivo DRM/KMS está disponível no convidado.\n' >&2
 fi
 systemctl enable --now signaged.service signaged_player.service

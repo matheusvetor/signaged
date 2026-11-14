@@ -4,7 +4,7 @@ use std::{
     error::Error,
     fs::{File, OpenOptions},
     io,
-    os::{fd::AsRawFd, unix::fs::FileExt},
+    os::fd::AsRawFd,
     path::Path,
     sync::atomic::{AtomicBool, Ordering},
     thread,
@@ -168,8 +168,65 @@ impl Drop for Console {
     }
 }
 
+// fbdev can expose a shadow buffer to write(2). Map the scanout memory as fbi does.
+struct Mapping {
+    address: *mut libc::c_void,
+    length: usize,
+    offset: usize,
+}
+
+impl Mapping {
+    fn open(file: &File, info: &FixedInfo) -> io::Result<Self> {
+        let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+        if page_size <= 0 {
+            return Err(io::Error::last_os_error());
+        }
+        let offset = (info.smem_start % page_size as libc::c_ulong) as usize;
+        let length = (info.smem_len as usize)
+            .checked_add(offset)
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidData, "framebuffer mapping too large")
+            })?;
+        let address = unsafe {
+            libc::mmap(
+                std::ptr::null_mut(),
+                length,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_SHARED,
+                file.as_raw_fd(),
+                0,
+            )
+        };
+        if address == libc::MAP_FAILED {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(Self {
+            address,
+            length,
+            offset,
+        })
+    }
+
+    fn write_row(&mut self, offset: usize, row: &[u8]) {
+        // Framebuffer::open validates the full viewport against the mapped length.
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                row.as_ptr(),
+                self.address.cast::<u8>().add(self.offset + offset),
+                row.len(),
+            );
+        }
+    }
+}
+
+impl Drop for Mapping {
+    fn drop(&mut self) {
+        unsafe { libc::munmap(self.address, self.length) };
+    }
+}
+
 struct Framebuffer {
-    file: File,
+    mapping: Mapping,
     info: VariableInfo,
     stride: u64,
     pixel_size: usize,
@@ -248,14 +305,14 @@ impl Framebuffer {
             return Err("framebuffer sem canais RGB completos".into());
         }
         Ok(Self {
-            file,
+            mapping: Mapping::open(&file, &fixed)?,
             info,
             stride,
             pixel_size,
         })
     }
 
-    fn write(&self, image: Option<&RgbImage>) -> io::Result<()> {
+    fn write(&mut self, image: Option<&RgbImage>) {
         let mut row = vec![0; self.info.xres as usize * self.pixel_size];
         let xoffset = u64::from(self.info.xoffset) * self.pixel_size as u64;
         for y in 0..self.info.yres {
@@ -274,9 +331,8 @@ impl Framebuffer {
                 bytes.copy_from_slice(&native[start..start + self.pixel_size]);
             }
             let offset = (u64::from(self.info.yoffset) + u64::from(y)) * self.stride + xoffset;
-            self.file.write_all_at(&row, offset)?;
+            self.mapping.write_row(offset as usize, &row);
         }
-        Ok(())
     }
 }
 
@@ -319,7 +375,7 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
         Action::Help => unreachable!(),
     };
     let mut console = Console::open(options.vt)?;
-    let framebuffer = Framebuffer::open(console.target)?;
+    let mut framebuffer = Framebuffer::open(console.target)?;
     let rendered = source.as_ref().map(|image| {
         frame(
             image,
@@ -332,12 +388,12 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
     console.activate()?;
-    framebuffer.write(rendered.as_ref())?;
+    framebuffer.write(rendered.as_ref());
     if rendered.is_some() && !options.once {
         while !STOP.load(Ordering::Relaxed) {
             thread::sleep(Duration::from_millis(50));
         }
-        framebuffer.write(None)?;
+        framebuffer.write(None);
     }
     console.restore()?;
     Ok(())

@@ -14,6 +14,6 @@ trap 'rm -f "$archive"' EXIT
 
 COPYFILE_DISABLE=1 tar -czf "$archive" \
     --exclude=target --exclude=dist \
-    Gemfile Gemfile.lock bin lib services assets/images/loading.png assets/images/black.ppm
+    Gemfile Gemfile.lock bin lib services assets/images/loading.png assets/images/black.png support/virtualbox/play-vlc support/virtualbox/omxplayer support/fbi-vetor
 export SIGNAGED_VM_ARCHIVE="$archive"
 vagrant up "${1:-default}" --provider=virtualbox --provision

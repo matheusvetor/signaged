@@ -106,3 +106,8 @@ do Signaged. Ela usa Debian 13 ARM64 com os repositórios da box e o hardware
 gráfico virtual do VirtualBox. Use o Pi físico para validar aceleração,
 desempenho e saída HDMI. Para uma cópia externa da box Debian, configure
 `SIGNAGED_PI_BOX_URL`.
+
+A VM `raspberry-pi` usa VLC para vídeos e o `fbi-vetor` para imagens e tela preta no framebuffer EFI (`/dev/fb0`) via VT 2 e
+herda o servidor e o serial do `.env`. Use `SIGNAGED_PI_SERVER` e
+`SIGNAGED_PI_SERIAL` para sobrescrever esses valores só na VM Debian. Defina
+`SIGNAGED_PI_SERVER=` para forçar a demonstração local.

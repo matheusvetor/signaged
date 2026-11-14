@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+options=(--ignore-config -I dummy --vout=fb --fbdev=/dev/fb0
+         --no-dbus --no-interact --aout=alsa --no-video-title-show --no-osd --play-and-exit)
+while (($#)); do
+    case "$1" in
+        --no-audio)
+            options+=(--no-audio)
+            ;;
+        --image-display-duration=*)
+            options+=("--image-duration=${1#*=}")
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            exit 2
+            ;;
+    esac
+    shift
+done
+(($# == 1)) || exit 2
+exec /usr/sbin/runuser -u tvopen -- /usr/bin/env XDG_RUNTIME_DIR=/run/signaged-vlc \
+    /usr/bin/cvlc "${options[@]}" -- "$1"

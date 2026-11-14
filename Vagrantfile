@@ -29,6 +29,11 @@ Vagrant.configure("2") do |config|
     pi.vm.box_version = "202510.26.0"
     pi.vm.box_architecture = "arm64"
     pi.vm.hostname = "signaged-pi"
+    pi.vm.provision "signaged-setup", type: "shell", path: "support/virtualbox/provision.sh", env: {
+      "SIGNAGED_SERVER" => settings.fetch("SIGNAGED_PI_SERVER", server),
+      "SIGNAGED_SERIAL" => settings.fetch("SIGNAGED_PI_SERIAL", settings.fetch("SIGNAGED_SERIAL", "virtualboxpi")),
+      "SIGNAGED_VIDEO_OUTPUT" => "vlc-fb"
+    } if settings["SIGNAGED_VM_ARCHIVE"]
     pi.vm.box_url = settings["SIGNAGED_PI_BOX_URL"] if settings["SIGNAGED_PI_BOX_URL"]
   end
 
@@ -43,7 +48,7 @@ Vagrant.configure("2") do |config|
   if (archive = settings["SIGNAGED_VM_ARCHIVE"])
     config.vm.provision "file", source: archive,
                                 destination: "/tmp/signaged-vm.tar.gz"
-    config.vm.provision "shell", path: "support/virtualbox/provision.sh",
+    config.vm.provision "signaged-setup", type: "shell", path: "support/virtualbox/provision.sh",
       env: {
         "SIGNAGED_SERVER" => server,
         "SIGNAGED_SERIAL" => settings.fetch("SIGNAGED_SERIAL", "virtualbox")

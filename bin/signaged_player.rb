@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'shellwords'
 require 'dotenv'
 require 'logger'
 require_relative '../lib/synchronizer.rb'
@@ -19,9 +20,9 @@ module SignagedPlayer
 
     logger.info('Started signaged player.')
 
-    $content_dir = File.join(project, 'downloads')
-    mpv = %w[/usr/bin/mpv --no-config --vo=drm --sws-scaler=fast-bilinear
-             --no-terminal --no-input-default-bindings]
+    # Get the expanded base directory
+    base_dir = File.expand_path(File.dirname(__FILE__))
+    $content_dir = "#{base_dir}/../downloads"
 
     synchronizer = Synchronizer.new(server, serial)
 
@@ -30,31 +31,54 @@ module SignagedPlayer
       current_schedule = synchronizer.get_local_json
 
       unless current_schedule && !current_schedule['items'].empty?
-        system(*mpv, '--no-audio', '--image-display-duration=1', '--',
-               File.join(project, 'assets', 'images', 'black.ppm'))
         sleep 1
         next
       end
 
-      items = Schedule.parse_items(JSON.generate(current_schedule['items']))
+      serialized_items = JSON.generate(current_schedule['items'])
+
+      items = Schedule.parse_items(serialized_items)
       Schedule.cleanup_unused_files(items)
 
-      available = items.select { |item| File.file?(item.file_path) }
-      available.each do |item|
+      video_player_pid = -1
+      image_player_pid = -1
 
-        options = if item.type == 'video'
-                    %w[--hwdec=auto --framedrop=decoder+vo].tap do |flags|
-                      flags << '--no-audio' unless item.audio_enabled
-                    end
-                  else
-                    ['--no-audio', "--image-display-duration=#{item.display_time}"]
-                  end
+      %x(fbi -T 2 -reset)
 
-        logger.info("Signaged Player: playing #{item.file_path}")
-        system(*mpv, *options, '--', item.file_path)
+      items.each do |item|
+        case item.type
+        when 'video'
+          file_path = item.file_path
+          if File.exist?(file_path)
+            command = "omxplayer -o hdmi --no-keys -n -1 #{Shellwords.escape(file_path)} > /dev/null"
+            command = "omxplayer -o hdmi --no-keys #{Shellwords.escape(file_path)} > /dev/null" if item.audio_enabled
+            logger.info("Signaged Player: spawn: #{command}")
+            video_player_pid = spawn(command)
+            # item.send_impression
+            status = Process.waitpid2(video_player_pid)
+
+            logger.info("Signaged Player: omxplayer finished: #{status[1]}")
+          end
+        when 'article', 'widget', 'image'
+          logger.info('Signaged - Starting image.' + item.filename)
+          file_path = item.file_path
+          if File.exist?(file_path)
+            command = "fbi -T 2 -a -noverbose #{Shellwords.escape(file_path)} > /dev/null"
+            image_player_pid = spawn('fbi', '-T', '2', '-a', '-noverbose', file_path, out: File::NULL)
+            logger.info("Signaged Player: spawn: #{command}")
+            # item.send_impression
+            sleep item.display_time
+            begin
+              Process.kill('TERM', image_player_pid)
+            rescue Errno::ESRCH
+              # The renderer already exited.
+            end
+            Process.waitpid(image_player_pid)
+
+            logger.info('Signaged Player: image finished')
+          end
+        end
       end
-
-      sleep 1 if available.empty?
     end
   end
 end

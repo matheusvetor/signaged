@@ -9,8 +9,10 @@ PI_SERVICES := signaged.service signaged_player.service git_update.service
 
 install-on-pi:
 
+	@. /etc/os-release && test "$$VERSION_CODENAME:$$(dpkg --print-architecture)" = buster:armhf || { echo "Use Raspberry Pi OS Buster 32-bit (armhf)."; exit 1; }
+	sudo apt-get update
 	# Install Ruby and the runtime gems
-	sudo apt-get install -y build-essential ca-certificates wget libssl-dev libyaml-dev zlib1g-dev mpv kbd
+	sudo apt-get install -y build-essential ca-certificates wget libssl-dev libyaml-dev zlib1g-dev omxplayer fbi kbd
 	wget -O ruby-$(RUBY_VERSION).tar.gz https://cache.ruby-lang.org/pub/ruby/4.0/ruby-$(RUBY_VERSION).tar.gz
 	printf '%s  %s\n' "$(RUBY_SHA256)" "ruby-$(RUBY_VERSION).tar.gz" | sha256sum --check
 	tar -xzf ruby-$(RUBY_VERSION).tar.gz

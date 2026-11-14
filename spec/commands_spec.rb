@@ -6,10 +6,6 @@ require_relative '../bin/signaged_player'
 RSpec.describe 'Signaged commands' do
   let(:logger) { instance_double(Logger, info: nil) }
   let(:stop_loop) { Class.new(StandardError) }
-  let(:mpv) do
-    %w[/usr/bin/mpv --no-config --vo=drm --sws-scaler=fast-bilinear
-       --no-terminal --no-input-default-bindings]
-  end
   let(:synchronizer) { instance_double(Synchronizer) }
 
   before do
@@ -51,8 +47,6 @@ RSpec.describe 'Signaged commands' do
     expect(Synchronizer).to receive(:new).with(anything, 'virtualbox').and_return(synchronizer)
     expect(synchronizer).to receive(:get_local_json).twice.and_return(false, { 'items' => [] })
     run_script(SignagedPlayer) do |receiver|
-      expect(receiver).to receive(:system).with(*mpv, '--no-audio', '--image-display-duration=1', '--',
-                                                File.expand_path('../assets/images/black.ppm', __dir__)).twice
       expect(receiver).to receive(:sleep).with(1).ordered
       expect(receiver).to receive(:sleep).with(1).ordered.and_raise(stop_loop)
     end
@@ -83,20 +77,28 @@ RSpec.describe 'Signaged commands' do
         instance_double(Video, type: 'video', file_path: '/audio', audio_enabled: true),
         instance_double(Image, type: 'image', file_path: '/image', filename: 'image', display_time: 12)
       ]
-      expect(synchronizer).to receive(:get_local_json).ordered.and_return('items' => [{}])
-      allow(synchronizer).to receive(:get_local_json).and_raise(stop_loop)
+      allow(synchronizer).to receive(:get_local_json).and_return('items' => [{}])
       allow(Schedule).to receive(:parse_items).with('[{}]').and_return(items)
-      expect(Schedule).to receive(:cleanup_unused_files).with(items)
-      allow(File).to receive(:file?).and_call_original
-      %w[/silent /audio /image].each { |path| allow(File).to receive(:file?).with(path).and_return(true) }
+      expect(Schedule).to receive(:cleanup_unused_files).with(items).twice
+      allow(File).to receive(:exist?).and_call_original
+      %w[/silent /audio /image].each { |path| allow(File).to receive(:exist?).with(path).and_return(true) }
+      allow(Process).to receive(:waitpid2).with(42).and_return([42, 'success'])
       run_script(SignagedPlayer) do |receiver|
         allow(receiver).to receive(:`).with(/cpuinfo/).and_return("serial\n")
-        expect(receiver).to receive(:system).with(*mpv, '--hwdec=auto', '--framedrop=decoder+vo',
-                                                  '--no-audio', '--', '/silent').ordered
-        expect(receiver).to receive(:system).with(*mpv, '--hwdec=auto', '--framedrop=decoder+vo',
-                                                  '--', '/audio').ordered
-        expect(receiver).to receive(:system).with(*mpv, '--no-audio', '--image-display-duration=12',
-                                                  '--', '/image').ordered
+        resets = 0
+        allow(receiver).to receive(:`).with('fbi -T 2 -reset') do
+          resets += 1
+          raise stop_loop if resets == 2
+
+          ''
+        end
+        expect(receiver).to receive(:spawn).with('omxplayer -o hdmi --no-keys -n -1 /silent > /dev/null').and_return(42)
+        expect(receiver).to receive(:spawn).with('omxplayer -o hdmi --no-keys /audio > /dev/null').and_return(42)
+        expect(receiver).to receive(:spawn).with('fbi', '-T', '2', '-a', '-noverbose', '/image', out: File::NULL).and_return(43)
+        expect(receiver).to receive(:sleep).with(12)
+        expect(Process).to receive(:kill).with('TERM', 43)
+        expect(Process).to receive(:waitpid).with(43)
+        expect(logger).to receive(:info).with('Signaged Player: image finished')
       end
     end
   end

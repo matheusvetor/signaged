@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+options=()
+if [[ ${1-} == -o && ${2-} == hdmi ]]; then shift 2; fi
+if [[ ${1-} == --no-keys ]]; then shift; fi
+if [[ ${1-} == -n && ${2-} == -1 ]]; then
+    options+=(--no-audio)
+    shift 2
+fi
+(($# == 1)) || exit 2
+exec /usr/local/bin/signaged-play-vlc "${options[@]}" -- "$1"
