@@ -31,11 +31,13 @@ Vagrant.configure("2") do |config|
     vb.cpus = 2
   end
 
-  config.vm.provision "file", source: settings.fetch("SIGNAGED_VM_ARCHIVE", ".signaged-vm.tar.gz"),
-                              destination: "/tmp/signaged-vm.tar.gz"
-  config.vm.provision "shell", path: "support/virtualbox/provision.sh",
-    env: {
-      "SIGNAGED_SERVER" => server,
-      "SIGNAGED_SERIAL" => settings.fetch("SIGNAGED_SERIAL", "virtualbox")
-    }
+  if (archive = settings["SIGNAGED_VM_ARCHIVE"])
+    config.vm.provision "file", source: archive,
+                                destination: "/tmp/signaged-vm.tar.gz"
+    config.vm.provision "shell", path: "support/virtualbox/provision.sh",
+      env: {
+        "SIGNAGED_SERVER" => server,
+        "SIGNAGED_SERIAL" => settings.fetch("SIGNAGED_SERIAL", "virtualbox")
+      }
+  end
 end

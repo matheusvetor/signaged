@@ -69,3 +69,30 @@ vagrant halt
 vagrant up
 vagrant ssh -c 'sudo journalctl -u signaged -u signaged_player -n 50'
 ```
+
+## Implantação por Ansible
+
+Instale `ansible-core` na máquina de controle. O destino precisa rodar
+Raspberry Pi OS, Debian ou Ubuntu com systemd, ter Python 3 e aceitar SSH com
+sudo. Copie `deploy/ansible/inventory.example.yml` para um inventário local
+e preencha o endereço, usuário SSH, servidor e serial cadastrado.
+
+Configure `signaged_git_repo` e `signaged_git_branch` com o repositório e
+a branch que o dispositivo deverá acompanhar. O usuário `tvopen` no destino
+precisa ter acesso de leitura ao repositório para o checkout e as atualizações.
+
+Para uma VM já criada com Vagrant, use `signaged_platform: virtualbox` e
+consulte `vagrant ssh-config` para obter host, porta, usuário e chave.
+Para um Pi, use `signaged_platform: pi`. O player no Pi espera encontrar
+`omxplayer` no PATH para reproduzir vídeo.
+
+```sh
+ansible-playbook -i /caminho/inventory.yml deploy/ansible/deploy.yml --limit pi_sala
+```
+
+O playbook instala Ruby 4.0.9 e Rust, clona a aplicação em
+`/home/tvopen/signaged`, compila e testa o `fbi-vetor` no destino e grava
+o `.env` com os valores do inventário. Ele habilita e inicia
+`signaged.service`, `signaged_player.service` e `git_update.service`.
+A primeira execução pode demorar durante as compilações.
+A VM recebe também os comandos de compatibilidade com mpv/DRM.

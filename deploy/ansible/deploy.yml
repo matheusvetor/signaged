@@ -1,0 +1,239 @@
+---
+- name: Implantar Signaged
+  hosts: signaged
+  become: true
+  serial: 1
+  vars:
+    signaged_source: "{{ playbook_dir }}/../.."
+    signaged_root: /home/tvopen/signaged
+    ruby_version: "4.0.9"
+    ruby_home: "/opt/signaged/ruby-{{ ruby_version }}"
+    signaged_units:
+      - signaged
+      - signaged_player
+      - git_update
+  tasks:
+    - name: Validar configuração do dispositivo
+      ansible.builtin.assert:
+        that:
+          - signaged_platform | default('') in ['pi', 'virtualbox']
+          - (signaged_server | default('')) is match('^https?://[^\\s#]+$')
+          - (signaged_serial | default('')) is match('^[A-Za-z0-9]+$')
+          - (signaged_git_repo | default('')) | length > 0
+          - (signaged_git_branch | default('')) is match('^[A-Za-z0-9][A-Za-z0-9._/-]*$')
+          - ansible_facts['os_family'] == 'Debian'
+          - ansible_facts['service_mgr'] == 'systemd'
+
+    - name: Instalar dependências
+      ansible.builtin.apt:
+        name: "{{ ['build-essential', 'ca-certificates', 'curl', 'git', 'libssl-dev', 'libyaml-dev', 'libreadline-dev', 'zlib1g-dev', 'libffi-dev', 'libgdbm-dev', 'kbd', 'psmisc', 'acl'] + (['mpv'] if signaged_platform == 'virtualbox' else []) }}"
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Criar a conta da instalação
+      ansible.builtin.user:
+        name: tvopen
+        home: /home/tvopen
+        create_home: true
+        shell: /bin/bash
+
+    - name: Preparar diretórios
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /opt/signaged
+        - /usr/local/libexec
+        - "{{ signaged_root }}"
+
+    - name: Verificar o Ruby com OpenSSL
+      ansible.builtin.command:
+        argv:
+          - "{{ ruby_home }}/bin/ruby"
+          - -ropenssl
+          - -e
+          - 'abort unless RUBY_VERSION == ARGV.first'
+          - "{{ ruby_version }}"
+      register: ruby_check
+      changed_when: false
+      failed_when: false
+
+    - name: Preparar ruby-build
+      when: ruby_check.rc != 0
+      ansible.builtin.git:
+        repo: https://github.com/rbenv/ruby-build.git
+        dest: /opt/signaged/ruby-build
+        version: v20261023
+        depth: 1
+
+    - name: Compilar e instalar Ruby
+      when: ruby_check.rc != 0
+      ansible.builtin.command:
+        argv:
+          - /opt/signaged/ruby-build/bin/ruby-build
+          - "{{ ruby_version }}"
+          - "{{ ruby_home }}"
+      environment:
+        MAKE_OPTS: "-j2"
+      notify: Reiniciar serviços
+
+    - name: Verificar se dotenv está instalado
+      ansible.builtin.command: "{{ ruby_home }}/bin/ruby {{ ruby_home }}/bin/gem list -i dotenv -v 2.7.6"
+      register: dotenv_check
+      changed_when: false
+      failed_when: dotenv_check.rc not in [0, 1]
+
+    - name: Instalar dotenv
+      when: dotenv_check.rc == 1
+      ansible.builtin.command: "{{ ruby_home }}/bin/ruby {{ ruby_home }}/bin/gem install dotenv -v 2.7.6 --no-document"
+      notify: Reiniciar serviços
+
+    - name: Preparar a pasta de checkout
+      ansible.builtin.file:
+        path: "{{ signaged_root }}"
+        owner: tvopen
+        state: directory
+
+    - name: Baixar a aplicação
+      become_user: tvopen
+      ansible.builtin.git:
+        repo: "{{ signaged_git_repo }}"
+        dest: "{{ signaged_root }}"
+        version: "{{ signaged_git_branch }}"
+      notify: Reiniciar serviços
+
+    - name: Preparar cache de mídia
+      ansible.builtin.file:
+        path: "{{ signaged_root }}/downloads/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop: [video, article, image, widget]
+
+    - name: Dar acesso ao log do atualizador
+      ansible.builtin.file:
+        path: "{{ signaged_root }}/logs"
+        owner: tvopen
+        state: directory
+
+    - name: Instalar Rust
+      ansible.builtin.shell: |
+        set -eu
+        installer=$(mktemp)
+        trap 'rm -f "$installer"' EXIT
+        curl -fsSL https://sh.rustup.rs -o "$installer"
+        sh "$installer" -y --profile minimal --default-toolchain 1.85.0 --no-modify-path
+      args:
+        creates: /opt/signaged/cargo/bin/rustup
+      environment: &rust_environment
+        CARGO_HOME: /opt/signaged/cargo
+        RUSTUP_HOME: /opt/signaged/rustup
+
+    - name: Compilar e testar fbi-vetor no destino
+      ansible.builtin.command:
+        cmd: /usr/bin/make CARGO="/opt/signaged/cargo/bin/cargo +1.85.0" TARGET_DIR=/opt/signaged/fbi-target test build
+        chdir: "{{ signaged_source_remote }}"
+      vars:
+        signaged_source_remote: "{{ signaged_root }}/support/fbi-vetor"
+      environment: *rust_environment
+      changed_when: false
+
+    - name: Configurar o dispositivo
+      ansible.builtin.copy:
+        dest: "{{ signaged_root }}/.env"
+        owner: tvopen
+        mode: '0600'
+        content: |
+          SERVER_NAME={{ signaged_server }}
+          SIGNAGED_SERIAL='{{ signaged_serial }}'
+      no_log: true
+      notify: Reiniciar serviços
+
+    - name: Instalar fbi-vetor
+      ansible.builtin.copy:
+        src: /opt/signaged/fbi-target/release/fbi
+        remote_src: true
+        dest: "{{ '/usr/local/libexec/fbi-vetor' if signaged_platform == 'virtualbox' else '/usr/local/bin/fbi' }}"
+        mode: '0755'
+      notify: Reiniciar serviços
+
+    - name: Instalar comandos DRM da VM
+      when: signaged_platform == 'virtualbox'
+      ansible.builtin.copy:
+        src: "{{ signaged_source }}/support/virtualbox/{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        mode: '0755'
+      loop:
+        - fbi
+        - omxplayer
+      notify: Reiniciar serviços
+
+    - name: Desmascarar unidades antes de copiar os arquivos
+      ansible.builtin.systemd_service:
+        name: "{{ item }}.service"
+        masked: false
+      loop: "{{ signaged_units }}"
+
+    - name: Instalar unidades do projeto
+      ansible.builtin.copy:
+        src: "{{ signaged_source }}/services/{{ item }}.service"
+        dest: "/etc/systemd/system/{{ item }}.service"
+        mode: '0644'
+      loop: "{{ signaged_units }}"
+      notify: Reiniciar serviços
+
+    - name: Preparar diretórios de configuração do systemd
+      ansible.builtin.file:
+        path: "/etc/systemd/system/{{ item }}.service.d"
+        state: directory
+        mode: '0755'
+      loop: "{{ signaged_units }}"
+
+    - name: Configurar caminhos e terminal dos serviços
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ item }}.service.d/virtualbox.conf"
+        mode: '0644'
+        content: |
+          [Unit]
+          Wants=network-online.target{{ ' signaged.service' if item == 'signaged_player' else '' }}
+          After=network-online.target{{ ' signaged.service' if item == 'signaged_player' else '' }}
+
+          [Service]
+          WorkingDirectory={{ signaged_root }}
+          User={{ 'tvopen' if item == 'git_update' else 'root' }}
+          ExecStart=
+          ExecStart={{ ruby_home }}/bin/ruby {{ signaged_root }}/bin/{{ item }}.rb
+          Environment=PATH=/usr/local/bin:/usr/bin:/bin
+          {% if signaged_platform == 'virtualbox' %}
+          Environment=SIGNAGED_MANAGE_WIFI=false
+          {% if item == 'signaged_player' %}
+          ExecStartPre=/usr/bin/chvt 2
+          {% endif %}
+          {% endif %}
+      loop: "{{ signaged_units }}"
+      notify: Reiniciar serviços
+
+    - name: Reservar VT 2 na VM
+      when: signaged_platform == 'virtualbox'
+      ansible.builtin.systemd_service:
+        name: getty@tty2.service
+        masked: true
+        state: stopped
+
+    - name: Aplicar mudanças antes de verificar a inicialização
+      ansible.builtin.meta: flush_handlers
+
+    - name: Habilitar e iniciar serviços
+      ansible.builtin.systemd_service:
+        name: "{{ item }}.service"
+        enabled: true
+        state: started
+      loop: "{{ signaged_units }}"
+
+  handlers:
+    - name: Reiniciar serviços
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        name: "{{ item }}.service"
+        state: restarted
+      loop: "{{ signaged_units }}"

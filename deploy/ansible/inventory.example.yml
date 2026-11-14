@@ -1,0 +1,12 @@
+all:
+  children:
+    signaged:
+      hosts:
+        pi_sala:
+          ansible_host: 192.0.2.10
+          ansible_user: seu_usuario_ssh
+          signaged_platform: pi
+          signaged_server: https://seu-servidor.example
+          signaged_serial: seuSerial
+          signaged_git_repo: https://github.com/sua-organizacao/signaged.git
+          signaged_git_branch: main

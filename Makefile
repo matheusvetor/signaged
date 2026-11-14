@@ -10,11 +10,11 @@ PI_SERVICES := signaged.service signaged_player.service git_update.service
 install-on-pi:
 
 	# Install Ruby and the runtime gems
-	sudo apt-get install -y build-essential ca-certificates wget libssl-dev libyaml-dev zlib1g-dev
+	sudo apt-get install -y build-essential ca-certificates wget libssl-dev libyaml-dev zlib1g-dev rustc cargo
 	wget -O ruby-$(RUBY_VERSION).tar.gz https://cache.ruby-lang.org/pub/ruby/4.0/ruby-$(RUBY_VERSION).tar.gz
 	printf '%s  %s\n' "$(RUBY_SHA256)" "ruby-$(RUBY_VERSION).tar.gz" | sha256sum --check
 	tar -xzf ruby-$(RUBY_VERSION).tar.gz
-	cd ruby-$(RUBY_VERSION) && ./configure --prefix=/usr/local
+	cd ruby-$(RUBY_VERSION) && ./configure --prefix=/usr/local --disable-install-doc
 	$(MAKE) -C ruby-$(RUBY_VERSION)
 	sudo make -C ruby-$(RUBY_VERSION) install
 	sudo /usr/local/bin/gem install dotenv -v 2.7.6 --no-document
