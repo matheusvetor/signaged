@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-project=/home/pi/signaged
+project=$(tar -xOf /tmp/signaged-vm.tar.gz install-root)
 : "${SIGNAGED_SERVER:=}" "${SIGNAGED_SERIAL:=virtualbox}"
 if [[ ! "$SIGNAGED_SERIAL" =~ ^[a-zA-Z0-9]+$ ]]; then
     printf 'SIGNAGED_SERIAL deve conter apenas letras e números.\n' >&2
@@ -115,7 +115,7 @@ fi
 printf 'SERVER_NAME=%s\nSIGNAGED_SERIAL=%s\n' "$SIGNAGED_SERVER" "$SIGNAGED_SERIAL" >"$project/.env"
 for unit in signaged signaged_player; do
     systemctl unmask "$unit.service"
-    install -m 0644 "$project/services/$unit.service" "/etc/systemd/system/$unit.service"
+    sed "s|@SIGNAGED_ROOT@|$project|g" "$project/services/$unit.service" >"/etc/systemd/system/$unit.service"
     install -d "/etc/systemd/system/$unit.service.d"
     cat >"/etc/systemd/system/$unit.service.d/virtualbox.conf" <<UNIT
 [Unit]

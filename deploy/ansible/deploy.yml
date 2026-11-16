@@ -4,7 +4,8 @@
   become: true
   serial: 1
   vars:
-    signaged_root: /home/pi/signaged
+    signaged_source: "{{ playbook_dir }}/../.."
+    signaged_root: "{{ lookup('ansible.builtin.file', signaged_source ~ '/install-root') }}"
     ruby_version: "4.0.9"
     ruby_home: "/opt/signaged/ruby-{{ ruby_version }}"
     signaged_units:
@@ -133,7 +134,7 @@
 
     - name: Instalar unidades do projeto
       ansible.builtin.copy:
-        src: "{{ signaged_source }}/services/{{ item }}.service"
+        content: "{{ lookup('ansible.builtin.file', signaged_source ~ '/services/' ~ item ~ '.service', rstrip=false) | replace('@SIGNAGED_ROOT@', signaged_root) }}"
         dest: "/etc/systemd/system/{{ item }}.service"
         mode: '0644'
       loop: "{{ signaged_units }}"

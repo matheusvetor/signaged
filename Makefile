@@ -1,6 +1,8 @@
 # Use a locale available even on minimal Raspberry Pi installations.
 export LC_ALL := C
 
+SIGNAGED_ROOT := $(shell cat install-root)
+
 RUBY_VERSION = 4.0.9
 RUBY_SHA256 = c35350682ff050b79702d57ade4516e7336063f510155d19fb2fb5b3f3909511
 
@@ -24,7 +26,10 @@ install-on-pi:
 	$(MAKE) install-services-on-pi
 
 install-services-on-pi:
-	sudo install -m 0644 $(addprefix services/,$(PI_SERVICES)) /etc/systemd/system/
+	@set -e; for unit in $(PI_SERVICES); do \
+		sed 's|@SIGNAGED_ROOT@|$(SIGNAGED_ROOT)|g' "services/$$unit" | \
+			sudo tee "/etc/systemd/system/$$unit" >/dev/null; \
+	done
 	sudo systemctl daemon-reload
 	sudo systemctl mask getty@tty2.service
 	sudo systemctl enable $(PI_SERVICES)

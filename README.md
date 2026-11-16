@@ -111,3 +111,5 @@ A VM `raspberry-pi` usa VLC para vídeos e o `fbi-vetor` para imagens e tela pre
 herda o servidor e o serial do `.env`. Use `SIGNAGED_PI_SERVER` e
 `SIGNAGED_PI_SERIAL` para sobrescrever esses valores só na VM Debian. Defina
 `SIGNAGED_PI_SERVER=` para forçar a demonstração local.
+
+O caminho de instalação padrão é definido em [`install-root`](install-root).

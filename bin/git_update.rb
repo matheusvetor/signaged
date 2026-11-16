@@ -1,15 +1,17 @@
 #!/usr/bin/env ruby
 
+require 'shellwords'
 require 'dotenv'
 require 'logger'
 
 module GitUpdate
   def self.run
-    Dotenv.load('/home/pi/signaged/.env')
-    logger = Logger.new('/home/pi/signaged/logs/git_update.log', 5, 100000)
+    project = File.expand_path('..', __dir__)
+    Dotenv.load(File.join(project, '.env'))
+    logger = Logger.new(File.join(project, 'logs', 'git_update.log'), 5, 100000)
 
     while true
-      command = "/usr/bin/git -C /home/pi/signaged pull origin #{ENV['GIT_BRANCH']}"
+      command = "/usr/bin/git -C #{Shellwords.escape(project)} pull origin #{ENV['GIT_BRANCH']}"
       system(command)
       logger.info("Trying to get code updates: #{command}")
 
