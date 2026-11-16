@@ -8,7 +8,7 @@ Type=simple
 Restart=always
 RestartSec=1
 User=pi
-ExecStart=/usr/local/bin/ruby  /home/tvopen/signaged/bin/auth_unit.rb
+ExecStart=/usr/local/bin/ruby  /home/pi/signaged/bin/auth_unit.rb
 
 [Install]
 WantedBy=multi-user.target

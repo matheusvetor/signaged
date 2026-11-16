@@ -36,7 +36,7 @@ raiz do projeto:
 
 O script cria e inicia uma VM Ubuntu 24.04 com janela gráfica e provisiona
 Ruby 4.0.9, as gems do projeto e o `mpv` em uma VM com a conta
-`tvopen` e o projeto em `/home/tvopen/signaged`. O Vagrant seleciona a
+`pi` e o projeto em `/home/pi/signaged`. O Vagrant seleciona a
 arquitetura do host (ARM64 ou AMD64). Se precisar usar uma cópia da box
 Bento fora do catálogo padrão, passe a URL da box VirtualBox da arquitetura
 correta em `SIGNAGED_VM_BOX_URL`.
@@ -75,7 +75,7 @@ sudo. Copie `deploy/ansible/inventory.example.yml` para um inventário local
 e preencha o endereço, usuário SSH, servidor e serial cadastrado.
 
 Configure `signaged_git_repo` e `signaged_git_branch` com o repositório e
-a branch que o dispositivo deverá acompanhar. O usuário `tvopen` no destino
+a branch que o dispositivo deverá acompanhar. O usuário `pi` no destino
 precisa ter acesso de leitura ao repositório para o checkout e as atualizações.
 
 Para uma VM já criada com Vagrant, use `signaged_platform: virtualbox` e
@@ -87,7 +87,7 @@ ansible-playbook -i /caminho/inventory.yml deploy/ansible/deploy.yml --limit pi_
 ```
 
 O playbook instala Ruby 4.0.9 e mpv, clona a aplicação em
-`/home/tvopen/signaged`, e grava
+`/home/pi/signaged`, e grava
 o `.env` com os valores do inventário. Ele habilita e inicia
 `signaged.service`, `signaged_player.service` e `git_update.service`.
 A primeira execução pode demorar durante a compilação do Ruby.

@@ -4,7 +4,7 @@
   become: true
   serial: 1
   vars:
-    signaged_root: /home/tvopen/signaged
+    signaged_root: /home/pi/signaged
     ruby_version: "4.0.9"
     ruby_home: "/opt/signaged/ruby-{{ ruby_version }}"
     signaged_units:
@@ -31,8 +31,8 @@
 
     - name: Criar a conta da instalação
       ansible.builtin.user:
-        name: tvopen
-        home: /home/tvopen
+        name: pi
+        home: /home/pi
         create_home: true
         shell: /bin/bash
 
@@ -90,11 +90,11 @@
     - name: Preparar a pasta de checkout
       ansible.builtin.file:
         path: "{{ signaged_root }}"
-        owner: tvopen
+        owner: pi
         state: directory
 
     - name: Baixar a aplicação
-      become_user: tvopen
+      become_user: pi
       ansible.builtin.git:
         repo: "{{ signaged_git_repo }}"
         dest: "{{ signaged_root }}"
@@ -111,13 +111,13 @@
     - name: Dar acesso ao log do atualizador
       ansible.builtin.file:
         path: "{{ signaged_root }}/logs"
-        owner: tvopen
+        owner: pi
         state: directory
 
     - name: Configurar o dispositivo
       ansible.builtin.copy:
         dest: "{{ signaged_root }}/.env"
-        owner: tvopen
+        owner: pi
         mode: '0600'
         content: |
           SERVER_NAME={{ signaged_server }}
@@ -157,7 +157,7 @@
 
           [Service]
           WorkingDirectory={{ signaged_root }}
-          User={{ 'tvopen' if item == 'git_update' else 'root' }}
+          User={{ 'pi' if item == 'git_update' else 'root' }}
           ExecStart=
           ExecStart={{ ruby_home }}/bin/ruby {{ signaged_root }}/bin/{{ item }}.rb
           Environment=PATH=/usr/local/bin:/usr/bin:/bin

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-project=/home/tvopen/signaged
+project=/home/pi/signaged
 : "${SIGNAGED_SERVER:=}" "${SIGNAGED_SERIAL:=virtualbox}"
 if [[ ! "$SIGNAGED_SERIAL" =~ ^[a-zA-Z0-9]+$ ]]; then
     printf 'SIGNAGED_SERIAL deve conter apenas letras e números.\n' >&2
@@ -30,8 +30,8 @@ for unit in signaged_player signaged; do
         systemctl stop "$unit.service"
     fi
 done
-if ! id tvopen >/dev/null 2>&1; then
-    useradd --create-home --home-dir /home/tvopen --shell /bin/bash tvopen
+if ! id pi >/dev/null 2>&1; then
+    useradd --create-home --home-dir /home/pi --shell /bin/bash pi
 fi
 install -d "$project" "$project/logs"
 tar -xzf /tmp/signaged-vm.tar.gz --no-same-owner -C "$project"
@@ -45,8 +45,8 @@ if [[ "$video_output" == vlc-fb ]]; then
     fi
     make -C "$project/support/fbi-vetor" CARGO="$CARGO_HOME/bin/cargo +1.85.0" build
     install -D -m 0755 "$project/support/fbi-vetor/target/release/fbi" /usr/local/bin/fbi
-    usermod -aG video,audio tvopen
-    printf 'd /run/signaged-vlc 0700 tvopen - -\n' >/etc/tmpfiles.d/signaged-vlc.conf
+    usermod -aG video,audio pi
+    printf 'd /run/signaged-vlc 0700 pi - -\n' >/etc/tmpfiles.d/signaged-vlc.conf
     systemd-tmpfiles --create /etc/tmpfiles.d/signaged-vlc.conf
     install -m 0755 "$project/support/virtualbox/play-vlc" /usr/local/bin/signaged-play-vlc
     install -m 0755 "$project/support/virtualbox/omxplayer" /usr/local/bin/

@@ -22,5 +22,5 @@ while (($#)); do
     shift
 done
 (($# == 1)) || exit 2
-exec /usr/sbin/runuser -u tvopen -- /usr/bin/env XDG_RUNTIME_DIR=/run/signaged-vlc \
+exec /usr/sbin/runuser -u pi -- /usr/bin/env XDG_RUNTIME_DIR=/run/signaged-vlc \
     /usr/bin/cvlc "${options[@]}" -- "$1"

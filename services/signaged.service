@@ -8,8 +8,8 @@ Type=simple
 Restart=always
 RestartSec=1
 User=root
-WorkingDirectory=/home/tvopen/signaged
-ExecStart=/usr/local/bin/ruby  /home/tvopen/signaged/bin/signaged.rb
+WorkingDirectory=/home/pi/signaged
+ExecStart=/usr/local/bin/ruby  /home/pi/signaged/bin/signaged.rb
 
 [Install]
 WantedBy=multi-user.target
