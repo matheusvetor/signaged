@@ -389,7 +389,13 @@ pub fn run(options: Options) -> Result<(), Box<dyn Error>> {
     }
     console.activate()?;
     framebuffer.write(rendered.as_ref());
-    if rendered.is_some() && !options.once {
+    if rendered.is_none() {
+        // Leave the cleared VT in graphics mode, as the original fbi did.
+        // Returning to text mode lets fbcon redraw the login prompt.
+        console.restore = false;
+        return Ok(());
+    }
+    if !options.once {
         while !STOP.load(Ordering::Relaxed) {
             thread::sleep(Duration::from_millis(50));
         }

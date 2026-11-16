@@ -92,8 +92,10 @@ RSpec.describe 'Signaged commands' do
 
           ''
         end
-        expect(receiver).to receive(:spawn).with('omxplayer -o hdmi --no-keys -n -1 /silent > /dev/null').and_return(42)
-        expect(receiver).to receive(:spawn).with('omxplayer -o hdmi --no-keys /audio > /dev/null').and_return(42)
+        expect(receiver).to receive(:system).with('fbi', '-T', '2', '-reset').ordered
+        expect(receiver).to receive(:spawn).with('omxplayer -o hdmi --no-keys -n -1 /silent > /dev/null').ordered.and_return(42)
+        expect(receiver).to receive(:system).with('fbi', '-T', '2', '-reset').ordered
+        expect(receiver).to receive(:spawn).with('omxplayer -o hdmi --no-keys /audio > /dev/null').ordered.and_return(42)
         expect(receiver).to receive(:spawn).with('fbi', '-T', '2', '-a', '-noverbose', '/image', out: File::NULL).and_return(43)
         expect(receiver).to receive(:sleep).with(12)
         expect(Process).to receive(:kill).with('TERM', 43)

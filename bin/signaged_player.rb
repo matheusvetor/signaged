@@ -53,6 +53,7 @@ module SignagedPlayer
             command = "omxplayer -o hdmi --no-keys -n -1 #{Shellwords.escape(file_path)} > /dev/null"
             command = "omxplayer -o hdmi --no-keys #{Shellwords.escape(file_path)} > /dev/null" if item.audio_enabled
             logger.info("Signaged Player: spawn: #{command}")
+            system('fbi', '-T', '2', '-reset')
             video_player_pid = spawn(command)
             # item.send_impression
             status = Process.waitpid2(video_player_pid)
