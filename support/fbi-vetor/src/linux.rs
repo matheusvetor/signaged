@@ -315,20 +315,31 @@ impl Framebuffer {
     fn write(&mut self, image: Option<&RgbImage>) {
         let mut row = vec![0; self.info.xres as usize * self.pixel_size];
         let xoffset = u64::from(self.info.xoffset) * self.pixel_size as u64;
+        let alpha = pack(255, self.info.alpha);
+        let start = if cfg!(target_endian = "big") {
+            4 - self.pixel_size
+        } else {
+            0
+        };
+        let end = start + self.pixel_size;
+
+        if image.is_none() && alpha != 0 {
+            let black = alpha.to_ne_bytes();
+            for bytes in row.chunks_exact_mut(self.pixel_size) {
+                bytes.copy_from_slice(&black[start..end]);
+            }
+        }
+
         for y in 0..self.info.yres {
-            for (x, bytes) in row.chunks_exact_mut(self.pixel_size).enumerate() {
-                let [r, g, b] = image.map_or([0, 0, 0], |image| image.get_pixel(x as u32, y).0);
-                let pixel = pack(r, self.info.red)
-                    | pack(g, self.info.green)
-                    | pack(b, self.info.blue)
-                    | pack(255, self.info.alpha);
-                let native = pixel.to_ne_bytes();
-                let start = if cfg!(target_endian = "big") {
-                    4 - self.pixel_size
-                } else {
-                    0
-                };
-                bytes.copy_from_slice(&native[start..start + self.pixel_size]);
+            if let Some(image) = image {
+                for (x, bytes) in row.chunks_exact_mut(self.pixel_size).enumerate() {
+                    let [r, g, b] = image.get_pixel(x as u32, y).0;
+                    let pixel = pack(r, self.info.red)
+                        | pack(g, self.info.green)
+                        | pack(b, self.info.blue)
+                        | alpha;
+                    bytes.copy_from_slice(&pixel.to_ne_bytes()[start..end]);
+                }
             }
             let offset = (u64::from(self.info.yoffset) + u64::from(y)) * self.stride + xoffset;
             self.mapping.write_row(offset as usize, &row);
