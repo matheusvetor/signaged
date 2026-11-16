@@ -10,6 +10,7 @@ FBI_BUILD_DIR := $(BUILD_ROOT)/fbi-vetor
 RUST_VERSION := 1.85.0
 RUSTUP ?= $(HOME)/.cargo/bin/rustup
 
+RUBY_JOBS ?= 3
 RUBY_VERSION = 4.0.9
 RUBY_SHA256 = c35350682ff050b79702d57ade4516e7336063f510155d19fb2fb5b3f3909511
 
@@ -34,7 +35,7 @@ install-ruby-on-pi:
 	printf '%s  %s\n' "$(RUBY_SHA256)" "$(RUBY_BUILD_DIR).tar.gz" | sha256sum --check
 	tar -xzf "$(RUBY_BUILD_DIR).tar.gz" -C "$(BUILD_ROOT)"
 	cd "$(RUBY_BUILD_DIR)" && ./configure --prefix=/usr/local --disable-install-doc
-	$(MAKE) -C "$(RUBY_BUILD_DIR)"
+	$(MAKE) -j$(RUBY_JOBS) -C "$(RUBY_BUILD_DIR)"
 	sudo make -C "$(RUBY_BUILD_DIR)" install
 
 install-fbi-on-pi:

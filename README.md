@@ -69,7 +69,7 @@ vagrant ssh -c 'sudo journalctl -u signaged -u signaged_player -n 50'
 
 ## Implantação por Ansible
 
-Instale `ansible-core` na máquina de controle. O destino precisa rodar
+Instale `ansible` na máquina de controle. O destino precisa rodar
 Raspberry Pi OS, Debian ou Ubuntu com systemd, ter Python 3 e aceitar SSH com
 sudo. Copie `deploy/ansible/inventory.example.yml` para um inventário local
 e preencha o endereço, usuário SSH, servidor e serial cadastrado.
@@ -83,10 +83,10 @@ consulte `vagrant ssh-config` para obter host, porta, usuário e chave.
 Para um Pi, use `signaged_platform: pi`. O player requer DRM/KMS para exibir conteúdo no console.
 
 ```sh
-ansible-playbook -i /caminho/inventory.yml deploy/ansible/deploy.yml --limit pi_sala
+ansible-playbook -i /caminho/inventory.yml deploy/ansible/deploy.yml --limit pi_test
 ```
 
-O playbook instala Ruby 4.0.9 e mpv, clona a aplicação em
+O playbook instala Ruby 4.0.9 e rust, clona a aplicação, compila o fbi em
 `/home/pi/signaged`, e grava
 o `.env` com os valores do inventário. Ele habilita e inicia
 `signaged.service`, `signaged_player.service` e `git_update.service`.
